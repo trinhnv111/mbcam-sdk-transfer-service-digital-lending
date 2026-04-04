@@ -1,0 +1,166 @@
+//buildscript {
+//    ext {
+//        springBootVersion = '2.5.3'
+//    }
+//    repositories {
+//		maven {
+//	    url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+//	    allowInsecureProtocol = true
+//	    credentials {
+//	        username "mbc"
+//	        password "Mbmbc123"
+//	    }
+//	}
+//    }
+//    dependencies {
+//        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+//    }
+//}
+
+buildscript {
+	ext {
+		springBootVersion = '2.5.3'
+	}
+	repositories {
+		mavenCentral()          //  thêm
+		gradlePluginPortal()    //  thêm
+
+		maven {
+			url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+			allowInsecureProtocol = true
+			credentials {
+				username "mbc"
+				password "Mbmbc123"
+			}
+		}
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+
+group = 'com.mbc.mybank'
+version = '1.0'
+sourceCompatibility = '11'
+compileJava {
+    options.encoding = 'UTF-8'
+}
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+configurations.all {
+	resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+		if (details.requested.group == 'org.apache.logging.log4j') {
+			details.useVersion '2.17.2'
+		}
+	}
+	exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+}
+
+repositories {	
+	maven {
+	    url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+	    allowInsecureProtocol = true
+	    credentials {
+	        username "mbc"
+	        password "Mbmbc123"
+	    }
+	}
+}
+
+
+/*repositories {
+	mavenCentral()
+}*/
+
+dependencies {
+	
+	implementation fileTree(dir: 'libs', include: ['*.jar'])
+	
+    //implementation group
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.5.3'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.5.3'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.5.3'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-quartz', version: '2.5.3'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: '2.6.1'
+
+    implementation group: 'com.github.ulisesbocchio', name: 'jasypt-spring-boot-starter', version: '3.0.4'
+	implementation group: 'org.springframework.security', name: 'spring-security-jwt', version: '1.0.11.RELEASE'
+
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.5.3.RELEASE'   
+    
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: '2.5.3'
+	implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: '1.8.3'
+	implementation group: 'com.zaxxer', name: 'HikariCP', version: '5.0.1' 
+        
+    implementation group: 'io.springfox', name: 'springfox-boot-starter', version: '3.0.0'  
+    implementation group: 'io.springfox', name: 'springfox-swagger2', version: '3.0.0'
+    implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: '3.0.0'
+	
+    implementation group: 'commons-chain', name: 'commons-chain', version: '1.2'
+    implementation group: 'commons-fileupload', name: 'commons-fileupload', version: '1.4'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.11'
+    implementation group: 'org.apache.commons', name: 'commons-pool2', version: '2.9.0'
+    implementation group: 'org.apache.thrift', name: 'libthrift', version: '0.13.0'
+    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
+    
+    implementation group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1.1'    
+    implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+        
+    implementation group: 'org.hibernate', name: 'hibernate-validator', version: '6.2.0.Final'
+    implementation group: 'com.oracle.database.jdbc', name: 'ojdbc8', version: '21.1.0.0'
+
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    implementation group: 'com.lmax', name: 'disruptor', version: '3.4.2'
+	
+    //implementation group: 'org.redisson', name: 'redisson-all', version: '3.6.5'
+    
+    implementation group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.15'
+    implementation group: 'org.jdom', name: 'jdom', version: '2.0.2'
+    implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
+	
+    implementation group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'    
+    implementation group: 'com.sun.xml.ws', name: 'jaxws-rt', version: '2.3.2'
+	implementation group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.17'
+	implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.4'
+	implementation group: 'org.redisson', name: 'redisson', version: '3.16.3'
+	compileOnly 'org.projectlombok:lombok:1.18.20'
+	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+	
+	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1' 
+	implementation group: 'javax.persistence', name: 'javax.persistence-api', version: '2.2'
+	implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '2.8.0'
+	implementation group: 'io.vavr', name: 'vavr', version: '0.10.4'
+
+//	implementation project(':mbcam-commonservice')
+	implementation group: 'com.mbc.common', name: 'mbcam-commonservice', version: '1.0.RELEASE'
+
+	// https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-spring
+	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-spring', version: '4.43.0'
+	// https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-provider-jdbc-template
+	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-template', version: '4.43.0'
+
+	// https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-rs-security-jose
+	implementation("org.apache.cxf:cxf-rt-rs-security-jose:3.6.6")
+	implementation group: 'kh.org.nbc.bakong_khqr', name: 'sdk-java', version: '1.0.0.9'
+
+//	implementation("org.bouncycastle:bcprov-jdk15to18:1.80")
+	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.60'
+	implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.60'
+
+	//implementation group: 'org.hibernate', name: 'hibernate-annotations', version: '3.5.6-Final'
+	//testImplementation 'org.springframework.boot:spring-boot-starter-test:2.5.3'
+	//testImplementation 'org.springframework.security:spring-security-test:2.5.3'
+}
+
+test {
+	//useJUnitPlatform()
+}
+
+

@@ -1,0 +1,11 @@
+<MBbank>
+	<scheduler-config>
+		<scheduler desc="reload lại thông tin cài đặt">
+			<time-config>0 0 3 1/1 * ? *</time-config>
+			<cron-tab>true</cron-tab>
+			<name>Reload config</name>
+			<className>com.mb.mobileapp.template.quartz.job.ReloadDataCacheJob</className>
+			<enable>true</enable>
+		</scheduler>
+	</scheduler-config>
+</MBbank>

@@ -1,0 +1,17 @@
+
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()   //  bắt buộc
+        mavenCentral()         //  nên có
+
+        maven {
+            url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+            allowInsecureProtocol = true
+        }
+    }
+}
+
+rootProject.name = 'mbcam-sdk-transfer-service'
+//include(':mbcam-commonservice')
+//project(':mbcam-commonservice').projectDir = new File(rootProject.projectDir, '../../mbcam-commonservice')

@@ -1,0 +1,104 @@
+# So luong pod duoc tao
+replicaCount: 1
+
+# Khai bao service
+service:
+  type: NodePort
+  nodePort: 10543
+  port: 10543
+
+# Khai bao hostnames
+hostAliases:
+  10.1.18.193: esbinternal.mbbank.com.vn
+  10.1.12.164: esbinternet.mbbank.com.vn
+  10.1.18.195: esbinternal.mbbank.com.vn
+  10.1.27.91: api-dev.mbbank.com.vn
+  10.1.37.61: api-dev-cam.mbbank.com.vn
+   
+# Khai bao su dung configmap
+configMaps:
+  - application.properties
+  - log4j2.xml
+
+# Khai bao su dung PVC
+pvc: false
+namePVC: pvc-cmv
+   
+# Khai bao volumeMount
+volumeMountsMap:
+  mountPathconfig: /deployment/config
+  mountPathpodinfo: /deployment/podinfo   
+  mountPathPVC: /data
+  
+#Khai bao tai nguyen su dung cho pod
+resources:
+  limits:
+    memory: 4Gi
+  requests:
+    memory: 2Gi
+
+# Khai bao promethus
+promethus: true
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: /actuator/prometheus
+  prometheus.io/port: "8699"
+  
+# Khai bao HealthCheck
+healthCheck: true
+startupProbe:
+  failureThreshold: 30
+  httpGet:
+    path: /actuator/health
+    port: 8699
+    scheme: HTTP
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 2
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /actuator/health/liveness
+    port: 8699
+    scheme: HTTP
+  periodSeconds: 5
+  successThreshold: 1
+  timeoutSeconds: 2
+readinessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /actuator/health/readiness
+    port: 8699
+    scheme: HTTP
+  periodSeconds: 5
+  successThreshold: 1
+  timeoutSeconds: 2
+
+# Khai bao bien moi truong 
+ENV_PROFILE: uat
+JVM_OPTS:  -Xms512m -Xmx2048m -Dsun.net.http.retryPost=false -Dhttp.retryPost=false -XX:+UnlockExperimentalVMOptions -XX:+UseContainerSupport
+
+# Chi dinh pod chay tren node co dinh(vd nodeName: worker01)
+nodeName: 
+ 
+# So lan deploy Helm
+numberHelm: H1
+
+# Thong tin image
+image:
+  repository: image_version
+  pullPolicy: Always
+
+# Khai bao secret-registry harbor
+imagePullSecrets:
+  - name: harbor-secret-registry
+
+podSecurityContext:
+  enabled: true
+  fsGroup: 10000
+### Configure Container Security Context
+containerSecurityContext:
+  enabled: true
+  runAsUser: 10000
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true

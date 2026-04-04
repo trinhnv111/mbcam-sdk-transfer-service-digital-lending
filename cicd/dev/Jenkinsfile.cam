@@ -1,0 +1,78 @@
+#!groovy
+
+node("${NODE_INTEGRATION_TEAM}") {
+    // =================================================================================
+    /**
+     * TODO: Chi thay doi 3 thong tin tren tuong ung voi project
+     *
+     * project_name: Name of project
+     * kubernetes_namespace: namespace of K8S
+     * environment: Special environment (Optional - dev/uat/golive)
+     *      dev: 10.1.16.211
+     *      uat: 10.1.27.43
+     *      golive: generate file deploy on helm-golive repo
+     */
+    def project_name = "mbc-sdk-transfer-service"
+    def kubernetes_namespace = "dev-mobile"
+    def environment = "dev-cam"
+    // =================================================================================
+
+    def harbor_host
+    def helm_host
+    def image_version
+    def url
+    def helm_template_name
+
+    if (environment == "dev-cam") {
+        harbor_host = "${harbor_cam}"
+        helm_host = "${helm_dev_cam}"
+        image_version = "1.0.1"
+        helm_template_name = "helm-template-mbbank"
+        url = "${helm_deploy_dev_cam}"
+    }
+
+    def docker_prefix = "${harbor_host}/${kubernetes_namespace}"
+
+    stage('1.Clone repository') {
+        checkout scm
+    }
+
+    stage('2.Gradle clean and build') {
+        sh """/sharedata/mobileapp/gradle-7.1.1/bin/gradle build --refresh-dependencies -Dorg.gradle.java.home=/sharedata/jenkin-home/tools/jdk-11.0.5"""
+    }
+
+    stage('3.Build image') {
+        app = docker.build("${docker_prefix}/${project_name}:${image_version}", "-f ./cicd/dev/Dockerfile .")
+    }
+
+    stage('4. Push image') {
+        docker.withRegistry("http://${harbor_host}/", 'harbor-private-registry-cam') {
+            app.push()
+        }
+    }
+
+    stage('5.Push to Helm') {
+        sh "/usr/local/bin/helm repo update"
+        sh "/usr/local/bin/helm fetch nexusrepo/${helm_template_name} --version 0.1.0"
+        sh "tar -xvf helm-template-mbbank-0.1.0.tgz"
+        sh "/usr/local/bin/helm create ${project_name}"
+        sh "rm -rf ${project_name}/templates/"
+        sh "yes | cp -rf ${helm_template_name}/templates/ ${project_name}/"
+        sh "yes | cp -rf cicd/dev/deploy-k8s/values.yaml ${project_name}/"
+        sh "yes | cp cicd/dev/configmap-k8s/* ${project_name}/"
+        sh "sed -i 's|image_version|$docker_prefix/${project_name}:${image_version}|g' ${project_name}/values.yaml"
+        sh "sed -i 's/H1/H305${BUILD_NUMBER}/g' ${project_name}/values.yaml"
+        sh "/usr/local/bin/helm template ${project_name}/ > ${project_name}/deploy-${project_name}.yaml "
+        sh "tar -cvzf ${project_name}-${image_version}.tgz ${project_name}/"
+        sh "curl -u ${user_helm_dev_cam_nexus}:${password_helm_dev_cam_nexus} http://devci.mbbank.com.vn:8447/repository/${helm_host}/ --upload-file ${project_name}-${image_version}.tgz"
+        sh "rm -rf ${project_name}-${image_version}.tgz"
+    }
+
+    stage('6.Deploy to K8s') {
+        if (environment == "dev-cam") {
+            build job: "${url}", parameters: [string(name: 'ProjectName', value: "${project_name}"),
+                                              string(name: 'ImageVersion', value: "${image_version}"),
+                                              string(name: 'KubernetesNamespace', value: "$kubernetes_namespace")]
+        }
+    }
+}
