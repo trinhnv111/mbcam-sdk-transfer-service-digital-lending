@@ -1,17 +1,19 @@
-
-
+// Khối này BẮT BUỘC phải nằm ở dòng đầu tiên của settings.gradle
 pluginManagement {
     repositories {
-        gradlePluginPortal()   //  bắt buộc
-        mavenCentral()         //  nên có
-
-        maven {
-            url "http://10.1.12.177:8445/repository/maven-mbc-group/"
-            allowInsecureProtocol = true
-        }
+        gradlePluginPortal()
+        mavenCentral()
+//        maven {
+//            url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+//            allowInsecureProtocol = true
+//        }
     }
 }
 
 rootProject.name = 'mbcam-sdk-transfer-service'
-//include(':mbcam-commonservice')
-//project(':mbcam-commonservice').projectDir = new File(rootProject.projectDir, '../../mbcam-commonservice')
+
+// Khai báo module
+include ':mbcam-commonservice'
+
+// Trỏ đường dẫn chính xác vào folder con bên trong cùng
+project(':mbcam-commonservice').projectDir = new File(settingsDir, '../../mbcam-commonservice-feature-salary_loans/mbcam-commonservice-feature-salary_loans')

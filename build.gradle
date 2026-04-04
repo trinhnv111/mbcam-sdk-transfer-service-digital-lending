@@ -22,17 +22,8 @@ buildscript {
 		springBootVersion = '2.5.3'
 	}
 	repositories {
-		mavenCentral()          //  thêm
-		gradlePluginPortal()    //  thêm
-
-		maven {
-			url "http://10.1.12.177:8445/repository/maven-mbc-group/"
-			allowInsecureProtocol = true
-			credentials {
-				username "mbc"
-				password "Mbmbc123"
-			}
-		}
+		mavenCentral()
+		gradlePluginPortal()
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -63,15 +54,21 @@ configurations.all {
 	exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
 }
 
-repositories {	
-	maven {
-	    url "http://10.1.12.177:8445/repository/maven-mbc-group/"
-	    allowInsecureProtocol = true
-	    credentials {
-	        username "mbc"
-	        password "Mbmbc123"
-	    }
-	}
+//repositories {
+//	maven {
+//	    url "http://10.1.12.177:8445/repository/maven-mbc-group/"
+//	    allowInsecureProtocol = true
+//	    credentials {
+//	        username "mbc"
+//	        password "Mbmbc123"
+//	    }
+//	}
+//}
+
+
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
 }
 
 
@@ -84,6 +81,7 @@ dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	
     //implementation group
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.5.3'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.5.3'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.5.3'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.5.3'
@@ -139,16 +137,12 @@ dependencies {
 	implementation group: 'io.vavr', name: 'vavr', version: '0.10.4'
 
 //	implementation project(':mbcam-commonservice')
-	implementation group: 'com.mbc.common', name: 'mbcam-commonservice', version: '1.0.RELEASE'
-
-	// https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-spring
-	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-spring', version: '4.43.0'
-	// https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-provider-jdbc-template
+	implementation project(':mbcam-commonservice')	// https://mvnrepository.com/artifact/net.javacrumbs.shedlock/shedlock-provider-jdbc-template
 	implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-template', version: '4.43.0'
 
 	// https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-rs-security-jose
 	implementation("org.apache.cxf:cxf-rt-rs-security-jose:3.6.6")
-	implementation group: 'kh.org.nbc.bakong_khqr', name: 'sdk-java', version: '1.0.0.9'
+//	implementation group: 'kh.org.nbc.bakong_khqr', name: 'sdk-java', version: '1.0.0.9'
 
 //	implementation("org.bouncycastle:bcprov-jdk15to18:1.80")
 	implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.60'
