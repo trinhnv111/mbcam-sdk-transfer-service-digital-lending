@@ -17,6 +17,7 @@ import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
 import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountNameRequest;
 import com.mbc.mobileapp.rest.remittance.init.InitMakeTransferInfo;
+import com.mbc.mobileapp.rest.salaryadvance.SaGetLimitInfoRequest;
 import com.mbc.mobileapp.rest.saving.close.DepositClosureInfo;
 import com.mbc.mobileapp.rest.saving.interest.InterestRequest;
 import com.mbc.mobileapp.rest.saving.open.SavingInfo;
@@ -168,9 +169,8 @@ public class CommonServiceRequest extends Request {
 
     //topup deposit info
     private boolean isInterestRate;
-    
+
 //    private TopUpSavingDepositInfo topUpSavingDepositInfo;
-    
 
 
 //    private InterestRequest interestRequest;
@@ -249,5 +249,10 @@ public class CommonServiceRequest extends Request {
     private RegisterCustInfo registerCustInfo;
 
     private String registerCustId;
+
+
+    //    =================== salary loan==========================
+    private SaGetLimitInfoRequest saGetLimitInfoRequest;
+
 
 }
