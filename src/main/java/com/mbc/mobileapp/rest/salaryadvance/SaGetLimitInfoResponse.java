@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class SaGetLimitInfoResponse extends BaseResponse {
+    private Boolean hasLimit;
     private String limitCode;
     private String productType;
     private BigDecimal limitAmount;
@@ -24,4 +25,5 @@ public class SaGetLimitInfoResponse extends BaseResponse {
     private LocalDate expiryDate;
     private Boolean hasActiveLoan;
     private String activeLoanCode;
+    private SaActiveLoanResponse saActiveLoanResponse;
 }
