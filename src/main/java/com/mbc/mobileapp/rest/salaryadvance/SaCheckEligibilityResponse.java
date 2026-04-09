@@ -1,4 +1,6 @@
 package com.mbc.mobileapp.rest.salaryadvance;
 
-public class SaCheckEligibilityResponse {
+import java.io.Serializable;
+
+public class SaCheckEligibilityResponse implements Serializable {
 }

@@ -57,11 +57,9 @@ public class DoSaGetCreditLimit implements Command {
             }
 
             // 2. Kiểm tra có khoản vay ACTIVE/OVERDUE không
-
             context.putVar("SA_HAS_LIMIT", true);// có hạn mức
 
-
-           ComTransDtlSaLoan activeLoans = saLoanRepo.
+            ComTransDtlSaLoan activeLoans = saLoanRepo.
                     findTopByCustIdAndLoanStatusInOrderByDisbursementDateDesc(custId, List.of("ACTIVE", "OVERDUE")).orElse(null);
 
 //            ComTransDtlSaLoan  activeLoan = activeLoans.isEmpty() ? null : activeLoans.get(0) ;

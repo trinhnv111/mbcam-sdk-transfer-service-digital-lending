@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -21,8 +22,8 @@ public class SaActiveLoanResponse {
     private BigDecimal grossAmount;
     private BigDecimal outstanding;
     private BigDecimal principalPaid;
-    private LocalDate disbursementDate;
-    private LocalDate dueDate;
+    private Date disbursementDate;
+    private Date dueDate;
     private BigDecimal feeAmount;
     private String collectionStatus;
 }

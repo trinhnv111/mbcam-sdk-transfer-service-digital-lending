@@ -25,13 +25,31 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
     public SaGetLimitInfoResponse getLimitInfo(CommonServiceRequest request, CustInfo cust) {
 
         ProcessContext context = loadContext(request, cust);
+
+        log.debug("[SA getLimitInfo] context: {}", context);
+
+
         SaGetLimitInfoResponse response = new SaGetLimitInfoResponse();
         try {
+//            saGetCreditLimitService.execute(context);
+//            log.debug("[SA getLimitInfo] context: {}", context);
+//            logService.execute(context);
+//
+//            Validator.Result result = context.getResult();
+//            response.setResult(result);
+
             saGetCreditLimitService.execute(context);
+
+            //  Lưu result ngay sau execute, trước logService
+            Validator.Result result = context.getResult();
+            log.debug("[SA getLimitInfo] result after execute: {}", result);
+
             logService.execute(context);
 
-            Validator.Result result = context.getResult();
+            //  Restore lại result đúng, không bị logService overwrite
+            context.setResult(result);
             response.setResult(result);
+
             if (result.isOk()) {
 
                 // có limit
@@ -54,6 +72,7 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
 //                    // Đọc thêm data phụ từ context.putVar
 //                    response.setHasActiveLoan((Boolean) context.getVar("SA_HAS_ACTIVE_LOAN"));
 //                    response.setActiveLoanCode((String) context.getVar("SA_ACTIVE_LOAN_CODE"));
+
                 }
 
                 // có khoản vay
@@ -67,8 +86,8 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
                                     .grossAmount(loan.getGrossAmount())
                                     .outstanding(loan.getOutstanding())
                                     .principalPaid(loan.getPrincipalPaid())
-                                    .disbursementDate(loan.getDisbursementDate() != null ? new java.sql.Date(loan.getDisbursementDate().getTime()).toLocalDate() : null)
-                                    .dueDate(loan.getDueDate() != null ? new java.sql.Date(loan.getDueDate().getTime()).toLocalDate() : null)
+                                    .disbursementDate(loan.getDisbursementDate() != null ? new java.sql.Date(loan.getDisbursementDate().getTime()) : null)
+                                    .dueDate(loan.getDueDate() != null ? new java.sql.Date(loan.getDueDate().getTime()) : null)
                                     .feeAmount(loan.getFeeAmount())
                                     .collectionStatus(loan.getCollectionStatus())
                                     .build()
