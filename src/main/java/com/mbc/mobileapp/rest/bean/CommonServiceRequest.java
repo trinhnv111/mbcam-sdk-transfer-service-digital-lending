@@ -20,7 +20,6 @@ import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountNameRequest;
 import com.mbc.mobileapp.rest.remittance.init.InitMakeTransferInfo;
-import com.mbc.mobileapp.rest.salaryadvance.SaGetLimitInfoRequest;
 import com.mbc.mobileapp.rest.saving.close.DepositClosureInfo;
 import com.mbc.mobileapp.rest.saving.interest.InterestRequest;
 import com.mbc.mobileapp.rest.saving.open.SavingInfo;
@@ -259,10 +258,5 @@ public class CommonServiceRequest extends Request {
     private PaymentRequest paymentRequest;
     private LoanRepaymentRequest loanRepaymentRequest;
     //endregion
-
-
-    //    =================== salary loan==========================
-    private SaGetLimitInfoRequest saGetLimitInfoRequest;
-
 
 }

@@ -7,7 +7,6 @@ import com.mbc.common.api.models.merchant.MerchantInfo;
 import com.mbc.common.bean.Response;
 import com.mbc.common.bean.TokenOtp;
 import com.mbc.common.dto.*;
-import com.mbc.common.entity.ComTransDtlSaCreditLimit;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.services.il.nonsavingacct.AccountBase;
@@ -35,7 +34,6 @@ import com.mbc.mobileapp.rest.digitalloan.repayment.RepaymentInfo;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountName;
 import com.mbc.mobileapp.rest.saving.campaign.CampaignConfig;
 import com.mbc.mobileapp.rest.user.initsdk.CustomerInfo;
-import com.mbc.mobileapp.service.salaryadvance.SaGetCreditLimitService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -152,13 +150,5 @@ public class CommonServiceResponse extends Response {
     private String t24DayNow;
     private MsLoanGetPdOutput pdOutput;
     private List<PaymentHistoryOutPut> paymentHistoryOutput;
-
-
-//    ====================sa loans ============================
-
-    private ComTransDtlSaCreditLimit saCreditLimit;
-
-
-
     private RepaymentInfo repaymentInfo;
 }
