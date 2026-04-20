@@ -1,8 +1,6 @@
 
 package com.mbc.mobileapp.rest.bean;
 
-import java.util.List;
-
 import com.mbc.common.api.models.merchant.MerchantInfo;
 import com.mbc.common.bean.Response;
 import com.mbc.common.bean.TokenOtp;
@@ -17,8 +15,8 @@ import com.mbc.mobileapp.api.model.remittance.output.RemittanceAddressOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceBankListOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceMakeTransferFinishOutput;
 import com.mbc.mobileapp.api.model.rm.RmCodeOutput;
+import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
 import com.mbc.mobileapp.api.model.saving.account.AccountSaving;
-
 import com.mbc.mobileapp.api.model.saving.close.DepositClosureOutput;
 import com.mbc.mobileapp.api.model.saving.cob.CheckCoBOutput;
 import com.mbc.mobileapp.api.model.saving.interest.InterestOutput;
@@ -36,6 +34,8 @@ import com.mbc.mobileapp.rest.saving.campaign.CampaignConfig;
 import com.mbc.mobileapp.rest.user.initsdk.CustomerInfo;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Setter
 @Getter
@@ -151,4 +151,9 @@ public class CommonServiceResponse extends Response {
     private MsLoanGetPdOutput pdOutput;
     private List<PaymentHistoryOutPut> paymentHistoryOutput;
     private RepaymentInfo repaymentInfo;
+    //endregion
+
+    //region Salary Advance
+    private CustInfoOutput custInfoOutput;
+    //endregion
 }
