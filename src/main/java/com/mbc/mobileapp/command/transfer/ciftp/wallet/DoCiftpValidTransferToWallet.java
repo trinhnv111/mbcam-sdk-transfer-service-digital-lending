@@ -84,7 +84,7 @@ public class DoCiftpValidTransferToWallet implements Command {
     @Override
     public boolean execute(Context cntxt) throws Exception {
         ProcessContext context = (ProcessContext) cntxt;
-        Validator.Result result = Validator.Result.OK;
+        Result result = Result.OK;
 
         CustInfo customer = context.getCustomer();
         CommonServiceRequest request = (CommonServiceRequest) context.getRequest();

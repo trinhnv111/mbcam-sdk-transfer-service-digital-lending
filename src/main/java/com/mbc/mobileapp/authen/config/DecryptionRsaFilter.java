@@ -75,7 +75,7 @@ public class DecryptionRsaFilter extends OncePerRequestFilter {
 
     private static RestResponse mappingResponseException(Exception e) {
         RestResponse resp = new RestResponse();
-        com.mbc.common.validator.base.Validator.Result result = null;
+        Validator.Result result = null;
 
 //        result = new SimpleResult(HttpStatus.BAD_REQUEST.getReasonPhrase(), false,
 //                String.valueOf(HttpStatus.BAD_REQUEST.value()));

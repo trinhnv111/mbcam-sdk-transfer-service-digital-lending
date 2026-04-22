@@ -1,87 +1,74 @@
 package com.mbc.mobileapp.service.base.impl;
 
 import com.mbc.common.bean.ProcessContext;
-import com.mbc.common.entity.ComTransDtlSaLoan;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
-import com.mbc.mobileapp.rest.salaryadvance.SaActiveLoanResponse;
-import com.mbc.mobileapp.rest.salaryadvance.SaGetLimitInfoResponse;
+import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
+import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
-import com.mbc.mobileapp.service.salaryadvance.SaGetCreditLimitService;
+import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
+import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
 
-    private final SaGetCreditLimitService saGetCreditLimitService;
+public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
+    private final SalaryAdvanceInitService salaryAdvanceInitService;
+    private final GetSaLimitService getSaLimitService;
+
+
 
     @Override
-    public SaGetLimitInfoResponse getLimitInfo(CommonServiceRequest request, CustInfo cust) {
-
-        ProcessContext context = loadContext(request, cust);
-        SaGetLimitInfoResponse response = new SaGetLimitInfoResponse();
+    public GetSaLimitResponse getSaLimit(CommonServiceRequest request, CustInfo custInfo) {
+        GetSaLimitResponse resp = new GetSaLimitResponse();
+        ProcessContext processContext = loadContext(request, custInfo);
+        Validator.Result result;
         try {
-            saGetCreditLimitService.execute(context);
-            logService.execute(context);
+            getSaLimitService.execute(processContext);
+            logService.execute(processContext);
+            result = processContext.getResult();
+            resp.setResult(result);
+            if(result.isOk()){
+                CommonServiceResponse res =(CommonServiceResponse) processContext.getResponse();
+                resp.setData(res.getSaLimitData());
 
-            Validator.Result result = context.getResult();
+            }
+
+
+        } catch (Exception e){
+            log.error(e.toString());
+            processContext.setResult(Validator.Result.UNKNOWN);
+        }
+
+
+        return resp;
+    }
+
+    @Override
+    public SalaryAdvanceInitResponse init(CommonServiceRequest request, CustInfo cust) {
+        ProcessContext context = loadContext(request, cust);
+        SalaryAdvanceInitResponse response = new SalaryAdvanceInitResponse();
+        Validator.Result result;
+        try {
+            salaryAdvanceInitService.execute(context);
+            logService.execute(context);
+            result = context.getResult();
             response.setResult(result);
             if (result.isOk()) {
-
-                // có limit
-                Boolean hasLimit = (Boolean) context.getVar("SA_HAS_LIMIT");
-                response.setHasLimit(Boolean.TRUE.equals(hasLimit));
-
-                if (Boolean.TRUE.equals(hasLimit)) {
-                    CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
-                    var limit = res.getSaCreditLimit();
-                    response.setLimitCode(limit.getLimitCode());
-                    response.setProductType(limit.getProductType());
-                    response.setLimitAmount(limit.getLimitAmount());
-                    response.setUsedAmount(limit.getUsedAmount());
-                    response.setAvailableAmount(limit.getAvailableAmount());
-                    response.setCurrency(limit.getCurrency());
-                    response.setFixedFee(limit.getFixedFee());
-                    response.setLimitStatus(limit.getLimitStatus());
-                    response.setEffectiveDate(limit.getEffectiveDate());
-                    response.setExpiryDate(limit.getExpiryDate());
-//                    // Đọc thêm data phụ từ context.putVar
-//                    response.setHasActiveLoan((Boolean) context.getVar("SA_HAS_ACTIVE_LOAN"));
-//                    response.setActiveLoanCode((String) context.getVar("SA_ACTIVE_LOAN_CODE"));
-                }
-
-                // có khoản vay
-
-                ComTransDtlSaLoan loan = (ComTransDtlSaLoan) context.getVar("SA_LOAN_OBJ");
-                if (loan != null) {
-                    response.setSaActiveLoanResponse(
-                            SaActiveLoanResponse.builder()
-                                    .loanCode(loan.getLoanCode())
-                                    .loanStatus(loan.getLoanStatus())
-                                    .grossAmount(loan.getGrossAmount())
-                                    .outstanding(loan.getOutstanding())
-                                    .principalPaid(loan.getPrincipalPaid())
-                                    .disbursementDate(loan.getDisbursementDate() != null ? new java.sql.Date(loan.getDisbursementDate().getTime()).toLocalDate() : null)
-                                    .dueDate(loan.getDueDate() != null ? new java.sql.Date(loan.getDueDate().getTime()).toLocalDate() : null)
-                                    .feeAmount(loan.getFeeAmount())
-                                    .collectionStatus(loan.getCollectionStatus())
-                                    .build()
-                    );
-                }
-
-
-            } else response.setSaActiveLoanResponse(null);
+                CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
+                response.setCustInfo(res.getCustInfoOutput());
+            }
         } catch (Exception e) {
-            log.error("[SA getLimitInfo] error: {}", e.toString());
+            log.error(e.toString());
             context.setResult(Validator.Result.UNKNOWN);
         }
         return response;
-
     }
 }
