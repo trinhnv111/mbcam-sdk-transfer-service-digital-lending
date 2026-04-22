@@ -2,6 +2,7 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
+import com.mbc.common.entity.ComTransDtlLmt;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Utility;
