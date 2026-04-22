@@ -55,9 +55,16 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
             // host_cif_id (từ session)
             tempRecord.setHostCifId(custInfo.getHostCifId());
 
+            //  fullName: ưu tiên T24, fallback eMoney
+            if (customerInfoT24 != null && customerInfoT24.getCustomerName() != null
+                    && !Utility.isNull(customerInfoT24.getCustomerName().getEngName())) {
+                tempRecord.setFullName(customerInfoT24.getCustomerName().getEngName());
+            } else {
+                tempRecord.setFullName(emCustInfo.getEnglishName());
+            }
 
-            //  nationalId (từ eMoney)
-            tempRecord.setNationalId(emCustInfo.getIdNumber());
+            //  nationalId (từ session — T24)
+            tempRecord.setNationalId(custInfo.getIdTypNo());
 
             //   gender (từ eMoney)
             tempRecord.setGender(emCustInfo.getGender());
