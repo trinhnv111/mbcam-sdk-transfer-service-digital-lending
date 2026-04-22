@@ -7,7 +7,9 @@ import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
-import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
+import com.mbc.common.entity.ComTransDtlLmt;
+import com.mbc.common.repository.ComTransDtlLmtRepo;
+import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoOutput;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +43,7 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
         try {
             AppLog.info("[SA INIT - SAVE TEMP RECORD] Start - requestId: " + request.getRequestId());
             EmCustInfoOutput emCustInfo = (EmCustInfoOutput) context.get("emCustInfoOutput");
-            CustInfoOutput custInfoOutput = (CustInfoOutput) context.get("customerInfoMS");
+            CustomerInfoT24 customerInfoT24 = (CustomerInfoT24) context.get("customerInfoMS");
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
 
             ComTransDtlLmt tempRecord = new ComTransDtlLmt();
@@ -52,13 +54,9 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
             // host_cif_id (từ session)
             tempRecord.setHostCifId(custInfo.getHostCifId());
 
-            //  full_name (ms)
 
-            tempRecord.setFullName(custInfoOutput.getFullName());
-
-
-            //  nationalId (ms)
-            tempRecord.setNationalId(custInfoOutput.getIdNumber());
+            //  nationalId (từ eMoney)
+            tempRecord.setNationalId(emCustInfo.getIdNumber());
 
             //   gender (từ eMoney)
             tempRecord.setGender(emCustInfo.getGender());

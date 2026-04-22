@@ -16,10 +16,9 @@ public class SalaryAdvanceInitService extends ChainBase {
     private final DoCheckRefNo doCheckRefNo;
     private final CheckCustomerState checkCustomerState;
     private final DoCheckSrvc doCheckSrvc;
-    private final DoSalaryAdvanceInit doSalaryAdvanceInit;
     private final DoGetCustInfoFromEM doGetCustInfoFromEM;
-    private final DoChecAMLSalaryAdvance doChecAMLSalaryAdvance;
     private final DoValidateSalaryCust doValidateSalaryCust;
+    private final DoChecAMLSalaryAdvance doChecAMLSalaryAdvance;
     private final DoGetCustInfroFromMSCust doGetCustInfroFromMSCust;
     private final DoSavaSalaryAdvanceTemRecord doSavaSalaryAdvanceTemRecord;
 
@@ -29,10 +28,9 @@ public class SalaryAdvanceInitService extends ChainBase {
         addCommand(doCheckRefNo);
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
-        addCommand(doSalaryAdvanceInit);
         addCommand(doGetCustInfoFromEM);
-        addCommand(doChecAMLSalaryAdvance);
         addCommand(doValidateSalaryCust);
+        addCommand(doChecAMLSalaryAdvance);
         addCommand(doGetCustInfroFromMSCust);
         addCommand(doSavaSalaryAdvanceTemRecord);
     }
