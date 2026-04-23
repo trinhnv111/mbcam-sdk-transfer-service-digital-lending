@@ -3,100 +3,140 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.object.CustInfo;
+
+import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.util.JSON;
+import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoOutput;
+import com.mbc.mobileapp.api.ApiDigitalLending;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmBaseResponse;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoData;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
-import springfox.documentation.spring.web.json.Json;
 
-import java.math.BigDecimal;
+import java.util.Objects;
 
+/**
+ * Command: Gọi eMoney API customer/info
+ * POST /{merchantCode}/digital-lending/customer/info
+ *
+ * Input: RSA encrypt (msisdn|idNumber)
+ * Output context:
+ *   "emCustomerInfo" → EmCustomerInfo (Nhóm 1)
+ *   "emSalaryInfo"   → EmSalaryInfo   (Nhóm 2)
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-
 public class DoGetCustInfoFromEM implements Command {
 
-    // 1.gọi api từ em -> cust
+    private final ApiDigitalLending apiDigitalLending;
+
+
     @Override
     public boolean execute(Context context) throws Exception {
         ProcessContext processContext = (ProcessContext) context;
-        Validator.Result result =Validator.Result.OK ;
-        CommonServiceRequest commonServiceRequest =  (CommonServiceRequest) processContext.getRequest();
-        CustInfo custInfo = commonServiceRequest.getCust();
+        Validator.Result result = Validator.Result.OK;
+        CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
+        CustInfo custInfo = request.getCust();
 
         try {
-            log.info("[SA INIT - GET CUST FROM EM] - requestId:{} , cifId:{} ", commonServiceRequest.getRequestId(),custInfo.getHostCifId());
-            String idNumber = custInfo.getIdTypNo();
+            // Lấy msisdn + idNumber từ MS Customer (T24) — đã call trước trong chain
+            CustomerInfoT24 custT24 = (CustomerInfoT24) processContext.get("customerInfoMS");
 
-            EmCustInfoOutput emCustInfoOutput = buidHardCustInfo(idNumber,custInfo);
-            // ném vào trong processcntx
-            processContext.put("emCustInfoOutput",emCustInfoOutput);
+            String idNumber = null;
+            String msisdn = null;
+
+            if (custT24 != null) {
+                // idNumber từ person.personalID[0].iDCode
+                if (custT24.getPerson() != null
+                        && custT24.getPerson().getPersonalID() != null
+                        && !custT24.getPerson().getPersonalID().isEmpty()) {
+                    idNumber = custT24.getPerson().getPersonalID().get(0).getIDCode();
+                }
+                // msisdn từ contactInfo.phone[0].phoneNo
+                if (custT24.getContactInfo() != null
+                        && custT24.getContactInfo().getPhone() != null
+                        && !custT24.getContactInfo().getPhone().isEmpty()) {
+                    msisdn = custT24.getContactInfo().getPhone().get(0).getPhoneNo();
+                }
+            }
+
+            // Fallback session nếu T24 không có
+            if (Utility.isNull(idNumber)) {
+                idNumber = custInfo.getIdTypNo();
+            }
+            if (Utility.isNull(msisdn)) {
+                msisdn = custInfo.getPhoneNum();
+            }
+
+            log.info("[SA INIT - GET CUST FROM EM] Start - requestId:{}, cifId:{}, msisdn:{}",
+                    request.getRequestId(), custInfo.getHostCifId(), msisdn);
+
+            // Call eMoney API customer/info
+            EmBaseResponse<EmCustInfoData> emResponse = apiDigitalLending.getCustomerInfo(
+                    msisdn, idNumber, request.getRequestId());
+
+            // Handle null response (timeout)
+            if (Objects.isNull(emResponse)) {
+                log.error("[SA INIT - GET CUST FROM EM] Response null (timeout) - requestId:{}",
+                        request.getRequestId());
+                result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getCode(), false,
+                        ResponseCode.REQUEST_TIMEOUT.getDesc());
+                processContext.setResult(result);
+                return true;
+            }
+
+            // Handle error response (status != 0)
+            if (emResponse.getStatus() == null || emResponse.getStatus() != 0) {
+                log.error("[SA INIT - GET CUST FROM EM] Error - requestId:{}, status:{}, code:{}, message:{}",
+                        request.getRequestId(), emResponse.getStatus(),
+                        emResponse.getCode(), emResponse.getMessage());
+
+                // Lookup trực tiếp — enum code = eMoney code
+                ResponseCode errorCode = ResponseCode.valueOfErrorCode(emResponse.getCode());
+                if (errorCode == null) {
+                    errorCode = ResponseCode.TRANSACTION_FAIL;
+                }
+                result = new SimpleResult(errorCode.getCode(), false, errorCode.getDesc());
+                processContext.setResult(result);
+                return true;
+            }
+
+            // Success — parse data
+            EmCustInfoData data = emResponse.getData();
+            if (Objects.isNull(data) || Objects.isNull(data.getCustomerInfo())) {
+                log.error("[SA INIT - GET CUST FROM EM] Data/customerInfo is null - requestId:{}",
+                        request.getRequestId());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
+                        ResponseCode.TRANSACTION_FAIL.getDesc());
+                processContext.setResult(result);
+                return true;
+            }
+
+            // Put vào context
+            processContext.put("emCustomerInfo", data.getCustomerInfo());
+            processContext.put("emSalaryInfo", data.getSalaryInfo());
+
+            log.info("[SA INIT - GET CUST FROM EM] Success - requestId:{}, customerId:{}",
+                    request.getRequestId(), data.getCustomerInfo().getCustomerId());
+
+        } catch (Exception e) {
+            log.error("[SA INIT - GET CUST FROM EM] Exception - requestId:{}, desc:{}",
+                    request.getRequestId(), JSON.stringify(e));
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
+                    ResponseCode.TRANSACTION_FAIL.getDesc());
         }
-        catch (Exception e ){
-            log.info("[SA INIT - GET CUST FROM EM] Exception- requestId:{} , desc:{} ", commonServiceRequest.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(),false,ResponseCode.TRANSACTION_FAIL.getDesc());
 
-        }
-
-        ((ProcessContext) context).setResult(result);
+        processContext.setResult(result);
         return !result.isOk();
     }
-
-    // hardcode
-    private EmCustInfoOutput buidHardCustInfo(String idNumber , CustInfo custInfo){
-        return EmCustInfoOutput.builder()
-                // Nhóm định danh
-                .customerId(custInfo.getHostCifId())
-                .familyName("TEST")
-                .firstName("SALARY ADVANCE")
-                .englishName("TEST SALARY ADVANCE")
-                .idType("NATIONAL_ID")
-                .idNumber(idNumber)  // Lấy từ session để match validate
-                .idExpiredDate("2030-12-31")
-                .gender("M")
-                .maritalStatus("Single")
-                .nationality("Cambodia")
-                .dateOfBirth("1995-06-15")
-                // Nơi sinh
-                .placeOfBirthCountry("Cambodia")
-                .placeOfBirthProvince("Phnom Penh")
-                .placeOfBirthDistrict("Chamkarmon")
-                .placeOfBirthCommune("Tonle Bassac")
-                // Email
-                .email("test.sa@mbc.com.kh")
-                // Nơi cư trú
-                .residentialCountry("Cambodia")
-                .residentialProvince("Phnom Penh")
-                .residentialDistrict("Chamkarmon")
-                .residentialCommune("Tonle Bassac")
-                .residentialVillage("Village 1")
-                // Số điện thoại
-                .phoneNumber("+855 12 345 678")
-                // Thông tin việc làm
-                .companyName("MBC Bank Cambodia")
-                .currentOccupation("Staff")
-                .employmentDate("2020-01-15")
-                .occupationLengthService(48)
-
-
-                .monthlySalaryAmountUsd(new BigDecimal("1500.00"))
-                .six_months_salary_payments(true)
-                // Nơi làm việc
-                .workCountry("Cambodia")
-                .workProvince("Phnom Penh")
-                .workDistrict("Chamkarmon")
-                .workCommune("Tonle Bassac")
-                .workVillage("Village 1")
-
-                .build();
-    }
-
 
 }

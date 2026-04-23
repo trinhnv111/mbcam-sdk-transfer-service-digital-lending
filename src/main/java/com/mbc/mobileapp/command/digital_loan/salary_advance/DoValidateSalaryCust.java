@@ -7,7 +7,8 @@ import com.mbc.common.util.JSON;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoOutput;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,55 +16,61 @@ import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * Command: Validate thông tin khách hàng từ eMoney
+ * 1. Match National ID (session vs eMoney)
+ * 2. Tuổi >= 18
+ * 3. Lương liên tục >= 6 tháng (từ salaryInfo.continuousSalary6Months)
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
-
 public class DoValidateSalaryCust implements Command {
 
     private static final int MIN_AGE = 18;
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
-    //2.validate khách hàng
     @Override
     public boolean execute(Context context) throws Exception {
         ProcessContext processContext = (ProcessContext) context;
         Validator.Result result = Validator.Result.OK;
-        CommonServiceRequest commonServiceRequest = (CommonServiceRequest) processContext.getRequest();
-        CustInfo custInfo = commonServiceRequest.getCust();
+        CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
+        CustInfo custInfo = request.getCust();
 
         try {
-            log.info("[SA INIT ] - vailate cust info - requestId :{}", commonServiceRequest.getRequestId());
+            log.info("[SA INIT - VALIDATE] Start - requestId:{}", request.getRequestId());
 
-            EmCustInfoOutput emCustInfoOutput = (EmCustInfoOutput) processContext.get("emCustInfoOutput");
+            EmCustomerInfo emCustInfo = (EmCustomerInfo) processContext.get("emCustomerInfo");
+            EmSalaryInfo emSalaryInfo = (EmSalaryInfo) processContext.get("emSalaryInfo");
 
-            if (Objects.isNull(emCustInfoOutput)) {
-                log.error("[SA INIT ] - vailate cust info null ");
-                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false, ResponseCode.TRANSACTION_FAIL.getDesc());
-                return true;
-            }
-            // 1 validate nationalId từ idNumber(session)  vs idNumber (em)
-            String sessionIdNumber = custInfo.getIdTypNo();
-            String emIdNumber = emCustInfoOutput.getIdNumber();
-
-            if (Utility.isNull(sessionIdNumber) || !sessionIdNumber.equals(emIdNumber)) {
-                log.error("[SA INIT ] - vailate cust info idNumber mismatch sessionIdNumber:{}, emIdNumber{} ", sessionIdNumber, emIdNumber);
-                result = new SimpleResult("idNumber mismatch", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
-
+            if (Objects.isNull(emCustInfo)) {
+                log.error("[SA INIT - VALIDATE] emCustomerInfo is null");
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
+                        ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
                 return true;
             }
-            //2 check tuổi
-            String dobStr = emCustInfoOutput.getDateOfBirth();
+
+            // 1. Validate nationalId: session (idTypNo) vs eMoney (idNumber)
+            String sessionIdNumber = custInfo.getIdTypNo();
+            String emIdNumber = emCustInfo.getIdNumber();
+
+            if (Utility.isNull(sessionIdNumber) || !sessionIdNumber.equals(emIdNumber)) {
+                log.error("[SA INIT - VALIDATE] ID mismatch: session={}, eMoney={}", sessionIdNumber, emIdNumber);
+                result = new SimpleResult("idNumber mismatch", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
+                processContext.setResult(result);
+                return true;
+            }
+
+            // 2. Check tuổi >= 18
+            String dobStr = emCustInfo.getDateOfBirth();
             if (Utility.isNull(dobStr)) {
-                log.error("[SA INIT] - DOB is null");
+                log.error("[SA INIT - VALIDATE] DOB is null");
                 result = new SimpleResult("DOB is null", false, ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
                 return true;
@@ -71,51 +78,43 @@ public class DoValidateSalaryCust implements Command {
 
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
             Date dob = sdf.parse(dobStr);
-
-            // tính tuổi
             Calendar dobCal = Calendar.getInstance();
             dobCal.setTime(dob);
-
             Calendar now = Calendar.getInstance();
-
             int age = now.get(Calendar.YEAR) - dobCal.get(Calendar.YEAR);
-
-            // check chưa qua sinh nhật năm nay
             if (now.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
                 age--;
             }
-
-            // validate
             if (age < MIN_AGE) {
-                log.error("[SA INIT] - age invalid: {}", age);
-                // ResponseCode + AGE_NOT_VALID
+                log.error("[SA INIT - VALIDATE] Age invalid: {}", age);
                 result = new SimpleResult("AGE_NOT_VALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
-
-
                 processContext.setResult(result);
                 return true;
             }
 
-            //3 check lương
-            if(Boolean.FALSE.equals(emCustInfoOutput.getSix_months_salary_payments())
-                    || emCustInfoOutput.getMonthlySalaryAmountUsd().compareTo(BigDecimal.ZERO) <=0){
-                log.error("[SA INIT] - salary invalid: {}", emCustInfoOutput.getSix_months_salary_payments());
-                // ResponseCode + AGE_NOT_VALID
-                result = new SimpleResult("SALARY AMOUNT INVALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
-
+            // 3. Check lương liên tục 6 tháng (từ salaryInfo)
+            if (Objects.isNull(emSalaryInfo)
+                    || Boolean.FALSE.equals(emSalaryInfo.getContinuousSalary6Months())
+                    || Objects.isNull(emSalaryInfo.getSalary3mAvgUSD())
+                    || emSalaryInfo.getSalary3mAvgUSD().signum() <= 0) {
+                log.error("[SA INIT - VALIDATE] Salary invalid: continuousSalary6Months={}, salary3mAvgUSD={}",
+                        emSalaryInfo != null ? emSalaryInfo.getContinuousSalary6Months() : null,
+                        emSalaryInfo != null ? emSalaryInfo.getSalary3mAvgUSD() : null);
+                result = new SimpleResult("SALARY_INVALID", false, ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
                 return true;
             }
 
+            log.info("[SA INIT - VALIDATE] Passed - requestId:{}", request.getRequestId());
 
         } catch (Exception e) {
-            log.info("[SA INIT - vailate cust info - requestId:{} , desc:{} ", commonServiceRequest.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false, ResponseCode.TRANSACTION_FAIL.getDesc());
-
+            log.error("[SA INIT - VALIDATE] Exception - requestId:{}, desc:{}",
+                    request.getRequestId(), JSON.stringify(e));
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
+                    ResponseCode.TRANSACTION_FAIL.getDesc());
         }
 
         processContext.setResult(result);
         return !result.isOk();
     }
-
 }

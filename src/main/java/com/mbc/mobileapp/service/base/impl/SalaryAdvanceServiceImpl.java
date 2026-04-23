@@ -6,7 +6,7 @@ import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoOutput;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
@@ -17,16 +17,13 @@ import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-
 public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
     private final SalaryAdvanceInitService salaryAdvanceInitService;
     private final GetSaLimitService getSaLimitService;
-
 
 
     @Override
@@ -42,15 +39,12 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
             if(result.isOk()){
                 CommonServiceResponse res =(CommonServiceResponse) processContext.getResponse();
                 resp.setData(res.getSaLimitData());
-
             }
-
 
         } catch (Exception e){
             log.error(e.toString());
             processContext.setResult(Validator.Result.UNKNOWN);
         }
-
 
         return resp;
     }
@@ -66,13 +60,13 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
             result = context.getResult();
             response.setResult(result);
             if (result.isOk()) {
-                // Lấy data từ context (đã được các command set vào)
-                EmCustInfoOutput emCustInfo = (EmCustInfoOutput) context.get("emCustInfoOutput");
+                // Lấy data từ context
+                EmCustomerInfo emCustInfo = (EmCustomerInfo) context.get("emCustomerInfo");
                 String tempRecordId = (String) context.get("tempRecordId");
-                CustomerInfoT24 customerInfoT24 = (CustomerInfoT24) context.get("customerInfoMS");
+                CustomerInfoT24 custT24 = (CustomerInfoT24) context.get("customerInfoMS");
 
                 // Build response trả FE
-                CustInfoOutput custInfoOutput = buildCustInfoOutput(emCustInfo, cust, tempRecordId, customerInfoT24);
+                CustInfoOutput custInfoOutput = buildCustInfoOutput(emCustInfo, cust, tempRecordId, custT24);
                 response.setCustInfo(custInfoOutput);
             }
         } catch (Exception e) {
@@ -84,49 +78,56 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
 
     /**
      * Build CustInfoOutput từ data eMoney + MS Customer (T24) + session
-     * Ưu tiên: T24 > eMoney > session (nếu có)
+     * Data sources:
+     *   - fullName      : T24 engName > eMoney familyName+firstName
+     *   - idNumber       : eMoney customerInfo.idNumber
+     *   - phoneNumber    : eMoney customerInfo.phoneNumber
+     *   - email          : T24 contactInfo.emailAddress (eMoney không có)
+     *   - maritalStatus  : T24 maritalStatus (eMoney không có)
+     *   - placeOfBirth   : session idTypPlace
+     *   - currentAddress : T24 customerAddress
      */
-    private CustInfoOutput buildCustInfoOutput(EmCustInfoOutput emCustInfo, CustInfo custInfo,
+    private CustInfoOutput buildCustInfoOutput(EmCustomerInfo emCustInfo, CustInfo custInfo,
                                                 String tempRecordId, CustomerInfoT24 custT24) {
         CustInfoOutput output = new CustInfoOutput();
         output.setTempRecordId(tempRecordId);
 
-        // Fullname: ưu tiên T24 engName, fallback eMoney englishName
-        output.setFullName(emCustInfo.getEnglishName());
+        // Fullname: T24 engName → fallback eMoney familyName + firstName
+        String emFullName = emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName();
+        output.setFullName(emFullName);
         if (custT24 != null && custT24.getCustomerName() != null
                 && !Utility.isNull(custT24.getCustomerName().getEngName())) {
             output.setFullName(custT24.getCustomerName().getEngName());
         }
 
+        // idNumber (từ eMoney)
         output.setIdNumber(emCustInfo.getIdNumber());
-        output.setPhoneNumber(emCustInfo.getPhoneNumber());
-        output.setEmail(emCustInfo.getEmail());
-        output.setEmployStartDate(emCustInfo.getEmploymentDate());
-        output.setMaritalStatus(emCustInfo.getMaritalStatus());
 
-        // Place of Birth (country): session ưu tiên > eMoney
-        output.setPlaceOfBirth(emCustInfo.getPlaceOfBirthCountry());
+        // phoneNumber (từ eMoney)
+        output.setPhoneNumber(emCustInfo.getPhoneNumber());
+
+        // email (từ T24 contactInfo — eMoney không có field này)
+        if (custT24 != null && custT24.getContactInfo() != null
+                && !Utility.isNull(custT24.getContactInfo().getEmailAddress())) {
+            output.setEmail(custT24.getContactInfo().getEmailAddress());
+        }
+
+        // maritalStatus (từ T24 — eMoney không có field này)
+        if (custT24 != null && !Utility.isNull(custT24.getMaritalStatus())) {
+            output.setMaritalStatus(custT24.getMaritalStatus());
+        }
+
+        // Place of Birth (country): từ session
         if (!Utility.isNull(custInfo.getIdTypPlace())) {
             output.setPlaceOfBirth(custInfo.getIdTypPlace());
         }
 
-        // Place of Birth Details (Province > District > Commune) — từ eMoney
-        CustInfoOutput.Address placeOfBirthAddr = new CustInfoOutput.Address();
-        placeOfBirthAddr.setProvince(emCustInfo.getPlaceOfBirthProvince());
-        placeOfBirthAddr.setDistrict(emCustInfo.getPlaceOfBirthDistrict());
-        placeOfBirthAddr.setCommune(emCustInfo.getPlaceOfBirthCommune());
-        output.setPlaceOfBirthAddress(placeOfBirthAddr);
-
-        // Current Address: ưu tiên T24 (customerAddress), fallback eMoney (residential*)
+        // Current Address: T24 customerAddress
         CustInfoOutput.Address currentAddress = new CustInfoOutput.Address();
         if (custT24 != null && custT24.getCustomerAddress() != null) {
             currentAddress.setProvince(custT24.getCustomerAddress().getProvinceCode());
             currentAddress.setDistrict(custT24.getCustomerAddress().getDistrictCode());
             currentAddress.setCommune(custT24.getCustomerAddress().getWardCode());
-        } else {
-            currentAddress.setProvince(emCustInfo.getResidentialProvince());
-            currentAddress.setDistrict(emCustInfo.getResidentialDistrict());
-            currentAddress.setCommune(emCustInfo.getResidentialCommune());
         }
         output.setCurrentAddress(currentAddress);
 
