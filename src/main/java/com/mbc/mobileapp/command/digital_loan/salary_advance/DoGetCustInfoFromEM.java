@@ -3,17 +3,14 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.object.CustInfo;
-
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.util.JSON;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
-import com.mbc.mobileapp.api.ApiDigitalLending;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmBaseResponse;
+import com.mbc.mobileapp.api.ApiEMoney;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoData;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
-import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
+import com.mbc.mobileapp.api.model.salary_advance.output.ExcuteEmoney;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +34,7 @@ import java.util.Objects;
 @Slf4j
 public class DoGetCustInfoFromEM implements Command {
 
-    private final ApiDigitalLending apiDigitalLending;
+    private final ApiEMoney apiEmoney;
 
 
     @Override
@@ -48,7 +45,7 @@ public class DoGetCustInfoFromEM implements Command {
         CustInfo custInfo = request.getCust();
 
         try {
-            // Lấy msisdn + idNumber từ MS Customer (T24) — đã call trước trong chain
+            // Lấy msisdn + idNumber từ MS Customer (T24)
             CustomerInfoT24 custT24 = (CustomerInfoT24) processContext.get("customerInfoMS");
 
             String idNumber = null;
@@ -69,19 +66,19 @@ public class DoGetCustInfoFromEM implements Command {
                 }
             }
 
-            // Fallback session nếu T24 không có
+            // Fallback
             if (Utility.isNull(idNumber)) {
                 idNumber = custInfo.getIdTypNo();
             }
             if (Utility.isNull(msisdn)) {
-                msisdn = custInfo.getPhoneNum();
+                msisdn = custInfo.getPhoneNo();
             }
 
             log.info("[SA INIT - GET CUST FROM EM] Start - requestId:{}, cifId:{}, msisdn:{}",
                     request.getRequestId(), custInfo.getHostCifId(), msisdn);
 
             // Call eMoney API customer/info
-            EmBaseResponse<EmCustInfoData> emResponse = apiDigitalLending.getCustomerInfo(
+            ExcuteEmoney<EmCustInfoData> emResponse = apiEmoney.getCustomerInfo(
                     msisdn, idNumber, request.getRequestId());
 
             // Handle null response (timeout)

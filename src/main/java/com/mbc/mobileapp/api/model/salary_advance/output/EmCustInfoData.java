@@ -5,10 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * data node trong response: chứa 3 nhóm
  * data.customerInfo  → EmCustomerInfo
  * data.salaryInfo    → EmSalaryInfo
- * data.walletBehaviorInfo → EmWalletBehaviorInfo (có thể null)
+ * data.walletBehaviorInfo → EmWalletBehaviorInfo
  */
 @Data
 @NoArgsConstructor

@@ -26,8 +26,6 @@ import java.util.Objects;
 
 public class DoGetCustInfroFromMSCust implements Command {
     // 3 lấy ra iphone address từ ms customer
-
-
     private final ApiCustomer apiCustormer;
 
     @Override

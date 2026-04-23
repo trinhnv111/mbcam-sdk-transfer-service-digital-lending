@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmBaseResponse<T> {
+public class ExcuteEmoney<T> {
     private Integer status;
     private String code;
     private String message;

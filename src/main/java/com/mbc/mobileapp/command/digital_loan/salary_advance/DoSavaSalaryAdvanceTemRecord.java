@@ -4,7 +4,7 @@ import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.entity.ComTransDtlLmt;
 import com.mbc.common.object.CustInfo;
-import com.mbc.common.repository.ComTransDtlLmtRepo;
+import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Utility;
@@ -39,7 +39,7 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
     private static final String STATUS_SUCCESS = "Success";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
-    private final ComTransDtlLmtRepo comTransDtlLmtRepo;
+    private final ComTransDtlLmtRepository comTransDtlLmtRepo;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -64,13 +64,12 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
             // host_cif_id (từ session)
             tempRecord.setHostCifId(custInfo.getHostCifId());
 
-            // fullName: ưu tiên T24 engName, fallback eMoney familyName + firstName
-            if (custT24 != null && custT24.getCustomerName() != null
-                    && !Utility.isNull(custT24.getCustomerName().getEngName())) {
-                tempRecord.setFullName(custT24.getCustomerName().getEngName());
-            } else {
-                tempRecord.setFullName(emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName());
-            }
+            // fullName: eMoney familyName + firstName
+//            if (custT24 != null && custT24.getCustomerName() != null
+//                    && !Utility.isNull(custT24.getCustomerName().getEngName())) {
+//                tempRecord.setFullName(custT24.getCustomerName().getEngName());
+//            }
+            tempRecord.setFullName(emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName());
 
             // nationalId (từ session — T24)
             tempRecord.setNationalId(custInfo.getIdTypNo());
@@ -83,7 +82,7 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
                 try {
                     tempRecord.setDateOfBirth(sdf.parse(emCustInfo.getDateOfBirth()));
                 } catch (Exception e) {
-                    AppLog.warn("[SA INIT] Cannot parse dateOfBirth: " + emCustInfo.getDateOfBirth());
+                    AppLog.warning("[SA INIT] Cannot parse dateOfBirth: " + emCustInfo.getDateOfBirth());
                 }
             }
 
