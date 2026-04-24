@@ -8,6 +8,8 @@ import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
+import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
+import com.mbc.mobileapp.api.model.salary_advance.output.SaLimitData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
@@ -29,33 +31,43 @@ public class DoGetSaLimitService implements Command {
     @Override
     public boolean execute(Context context) throws Exception {
         ProcessContext processContext = (ProcessContext) context;
-        Validator.Result result=Validator.Result.OK;
+        Validator.Result result = Validator.Result.OK;
         CustInfo custInfo = processContext.getCustomer();
         CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
-        try{
-            String hostCif =(String) context.get("hostCifId");
+        try {
+            // hostCif lấy từ custInfo
+            String hostCif = custInfo.getHostCifId();
 
-            //call repo com_loan_disburment
-
-            ComTransDtlLmt comTransDtlLmt =comTransDtlLmtRepository.
+            // call repo com_loan_disburment (bảng LIMIT)
+            ComTransDtlLmt comTransDtlLmt = comTransDtlLmtRepository.
                     findTopByHostCifIdAndStatusOrderByCreatedAtDesc(hostCif, "COM");
 
-            if(comTransDtlLmt!= null){
-                BigDecimal approvedLimit = comTransDtlLmt.getApproveLimit();
-                BigDecimal usedLimit = comTransDtlLmt.getUsedLimit();
+            // Build data trả về
+            SaLimitData limitData = new SaLimitData();
 
-                context.put("approveLimit",approvedLimit);
-                context.put("usedLimit",usedLimit);
+            if (comTransDtlLmt != null) {
+                limitData.setApproveLimit(comTransDtlLmt.getApproveLimit());
+                limitData.setUsedLimit(comTransDtlLmt.getUsedLimit());
+                limitData.setCurrency(comTransDtlLmt.getCurrency());
+            } else {
+                // Chưa đăng ký hạn mức → trả về 0
+                limitData.setApproveLimit(BigDecimal.ZERO);
+                limitData.setUsedLimit(BigDecimal.ZERO);
+                limitData.setCurrency(null);
             }
 
+            CommonServiceResponse res = new CommonServiceResponse();
+            res.setSaLimitData(limitData);
+            processContext.setResponse(res);
 
+//            return true;
 
         } catch (Exception e) {
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(),false,ResponseCode.TRANSACTION_FAIL.getDesc());
-
+            log.error("[DoGetSaLimitService] exception - hostCif: {}", custInfo != null ? custInfo.getHostCifId() : "null", e);
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false, ResponseCode.TRANSACTION_FAIL.getDesc());
         }
 
         processContext.setResult(result);
-        return  !result.isOk();
+        return !result.isOk();
     }
 }

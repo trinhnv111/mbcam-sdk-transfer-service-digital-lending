@@ -28,8 +28,8 @@ public class SalaryAdvanceInitService extends ChainBase {
         addCommand(doCheckRefNo);
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
-        addCommand(doGetCustInfroFromMSCust);       // 4. Lấy thông tin T24 trước
-        addCommand(doGetCustInfoFromEM);             // 5. Gọi eMoney (dùng msisdn+idNumber từ T24)
+        addCommand(doGetCustInfroFromMSCust);
+        addCommand(doGetCustInfoFromEM);
         addCommand(doValidateSalaryCust);
         addCommand(doChecAMLSalaryAdvance);
         addCommand(doSavaSalaryAdvanceTemRecord);

@@ -46,7 +46,7 @@ public class SalaryAdvanceController extends BaseController {
 
     @ApiOperation("API get digital loans limit")
     @PostMapping("/limit")
-    public GetSaLimitResponse getSaLimitResponse(@RequestBody @Valid DynamicKeyRequest dynamicKeyRequest, HttpServletRequest requestClient) {
+    public GetSaLimitResponse getSaLimitResponse(@RequestBody DynamicKeyRequest dynamicKeyRequest, HttpServletRequest requestClient) {
         GetSaLimitResponse resp = new GetSaLimitResponse();
         com.mbc.common.validator.base.Validator.Result result = null;
         GetSaLimitRequest param;
@@ -76,14 +76,16 @@ public class SalaryAdvanceController extends BaseController {
             CommonServiceRequest commonServiceRequest = new CommonServiceRequest();
             CustInfo custInfo = getCustFromSession(param.getSessionId());
             if (custInfo != null) {
+                param.setHostCifId(custInfo.getHostCifId());
                 // param common
                 commonServiceRequest = (CommonServiceRequest) setBase(commonServiceRequest, param);
                 Principal principal = requestClient.getUserPrincipal();
                 commonServiceRequest.setPartnerId(principal.getName());
-//                commonServiceRequest.setGetLoanRequest(param.getHostCifId());
+//                commonServiceRequest.getGetSaLimitRequest(param);
                 commonServiceRequest.setSrvcCd(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = salaryAdvanceService.getSaLimit(commonServiceRequest, custInfo);
             }
+
         }
         resp.setRefNo(param.getRefNo());
         log.info("[LOAN GET LIMIT] out data: {}", JSON.stringify(resp));
@@ -94,7 +96,7 @@ public class SalaryAdvanceController extends BaseController {
 
     @ApiOperation("Api init salary advance")
     @PostMapping("/init")
-    public SalaryAdvanceInitResponse getLoan(@RequestBody @Valid DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
+    public SalaryAdvanceInitResponse getLoan(@RequestBody  DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
         SalaryAdvanceInitResponse resp = new SalaryAdvanceInitResponse();
         com.mbc.common.validator.base.Validator.Result result;
         SalaryAdvanceInitRequest param;

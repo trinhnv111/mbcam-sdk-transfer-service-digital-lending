@@ -77,22 +77,21 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
     }
 
     /**
-     * Build CustInfoOutput từ data eMoney + MS Customer (T24) + session
-     * Data sources:
-     *   - fullName      : T24 engName > eMoney familyName+firstName
+     * Build CustInfoOutput từ data eMoney + MS Customer+ session
+     *   - fullName      : eMoney familyName+firstName
      *   - idNumber       : eMoney customerInfo.idNumber
      *   - phoneNumber    : eMoney customerInfo.phoneNumber
-     *   - email          : T24 contactInfo.emailAddress (eMoney không có)
-     *   - maritalStatus  : T24 maritalStatus (eMoney không có)
-     *   - placeOfBirth   : session idTypPlace
-     *   - currentAddress : T24 customerAddress
+     *   - email          :
+     *   - maritalStatus  :  maritalStatus
+     *   - placeOfBirth   :  idTypPlace
+     *   - currentAddress :  customerAddress
      */
     private CustInfoOutput buildCustInfoOutput(EmCustomerInfo emCustInfo, CustInfo custInfo,
                                                 String tempRecordId, CustomerInfoT24 custT24) {
         CustInfoOutput output = new CustInfoOutput();
         output.setTempRecordId(tempRecordId);
 
-        // Fullname: T24 engName → fallback eMoney familyName + firstName
+        // Fullname: eMoney familyName + firstName
         String emFullName = emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName();
         output.setFullName(emFullName);
         if (custT24 != null && custT24.getCustomerName() != null

@@ -129,6 +129,8 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
 
             AppLog.info("[SA INIT - SAVE TEMP RECORD] Saved - id: " + tempRecord.getId());
 
+//            return true;
+
         } catch (Exception e) {
             AppLog.error("[Exception Save SA Temp Record] requestId: " + request.getRequestId() + " desc: ", e);
             result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,

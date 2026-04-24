@@ -104,7 +104,7 @@ public class DoGetCustInfoFromEM implements Command {
                 }
                 result = new SimpleResult(errorCode.getCode(), false, errorCode.getDesc());
                 processContext.setResult(result);
-                return true;
+//                return true;
             }
 
             // Success — parse data
@@ -115,7 +115,7 @@ public class DoGetCustInfoFromEM implements Command {
                 result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
                         ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
-                return true;
+//                return true;
             }
 
             // Put vào context

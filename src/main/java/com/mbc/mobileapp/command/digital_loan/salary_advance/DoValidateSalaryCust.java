@@ -73,7 +73,7 @@ public class DoValidateSalaryCust implements Command {
                 log.error("[SA INIT - VALIDATE] DOB is null");
                 result = new SimpleResult("DOB is null", false, ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
-                return true;
+
             }
 
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
@@ -89,7 +89,7 @@ public class DoValidateSalaryCust implements Command {
                 log.error("[SA INIT - VALIDATE] Age invalid: {}", age);
                 result = new SimpleResult("AGE_NOT_VALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
                 processContext.setResult(result);
-                return true;
+
             }
 
             // 3. Check lương liên tục 6 tháng (từ salaryInfo)
@@ -102,10 +102,11 @@ public class DoValidateSalaryCust implements Command {
                         emSalaryInfo != null ? emSalaryInfo.getSalary3mAvgUSD() : null);
                 result = new SimpleResult("SALARY_INVALID", false, ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
-                return true;
+
             }
 
             log.info("[SA INIT - VALIDATE] Passed - requestId:{}", request.getRequestId());
+//            return true;
 
         } catch (Exception e) {
             log.error("[SA INIT - VALIDATE] Exception - requestId:{}, desc:{}",

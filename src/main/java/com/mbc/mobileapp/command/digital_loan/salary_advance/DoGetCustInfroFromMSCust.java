@@ -33,7 +33,8 @@ public class DoGetCustInfroFromMSCust implements Command {
         ProcessContext processContext = (ProcessContext) context;
         Validator.Result result = Validator.Result.OK;
         CommonServiceRequest commonServiceRequest = (CommonServiceRequest) processContext.getRequest();
-        CustInfo custInfo = commonServiceRequest.getCust();
+//        CustInfo custInfo = commonServiceRequest.getCust();
+        CustInfo custInfo = processContext.getCustomer();
 
         try {
             AppLog.info("[SA-INIT] Get custormer info from ms customer- requestId:{}" + commonServiceRequest.getRequestId());
@@ -50,6 +51,7 @@ public class DoGetCustInfroFromMSCust implements Command {
                 AppLog.info("[SA-INIT] Get custormer info from ms customer fail- requestId:{}" + commonServiceRequest.getRequestId());
             }
 
+//            return true;
 
         } catch (Exception e) {
             AppLog.info("[SA-INIT] Get custormer info from ms customer exception - requestId:{}" + commonServiceRequest.getRequestId());

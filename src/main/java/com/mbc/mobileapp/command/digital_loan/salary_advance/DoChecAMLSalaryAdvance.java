@@ -108,6 +108,8 @@ public class DoChecAMLSalaryAdvance implements Command {
                     processContext.setResult(result);
                     return !result.isOk();
                 }
+
+//                return true;
             }
 
         } catch (Exception e) {
