@@ -1,5 +1,6 @@
 package com.mbc.mobileapp.api.model.salary_advance.output;
 
+import com.mbc.common.services.il.customerinfo.CustomerAddress;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

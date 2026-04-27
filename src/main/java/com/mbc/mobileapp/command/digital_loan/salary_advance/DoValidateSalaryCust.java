@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * Command: Validate thông tin khách hàng từ eMoney
  * 1. Match National ID (session vs eMoney)
- * 2. Tuổi >= 18
+ * 2.  18<= Tuổi <60
  * 3. Lương liên tục >= 6 tháng (từ salaryInfo.continuousSalary6Months)
  */
 @Service
@@ -33,6 +33,7 @@ import java.util.Objects;
 public class DoValidateSalaryCust implements Command {
 
     private static final int MIN_AGE = 18;
+    private static final int MAX_AGE = 60;
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     @Override
@@ -40,7 +41,7 @@ public class DoValidateSalaryCust implements Command {
         ProcessContext processContext = (ProcessContext) context;
         Validator.Result result = Validator.Result.OK;
         CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
-        CustInfo custInfo = request.getCust();
+        CustInfo custInfo = processContext.getCustomer();
 
         try {
             log.info("[SA INIT - VALIDATE] Start - requestId:{}", request.getRequestId());
@@ -85,10 +86,11 @@ public class DoValidateSalaryCust implements Command {
             if (now.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
                 age--;
             }
-            if (age < MIN_AGE) {
+            if (age < MIN_AGE || age > MAX_AGE) {
                 log.error("[SA INIT - VALIDATE] Age invalid: {}", age);
                 result = new SimpleResult("AGE_NOT_VALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
                 processContext.setResult(result);
+                return true;
 
             }
 
@@ -102,7 +104,7 @@ public class DoValidateSalaryCust implements Command {
                         emSalaryInfo != null ? emSalaryInfo.getSalary3mAvgUSD() : null);
                 result = new SimpleResult("SALARY_INVALID", false, ResponseCode.TRANSACTION_FAIL.getDesc());
                 processContext.setResult(result);
-
+                return true;
             }
 
             log.info("[SA INIT - VALIDATE] Passed - requestId:{}", request.getRequestId());

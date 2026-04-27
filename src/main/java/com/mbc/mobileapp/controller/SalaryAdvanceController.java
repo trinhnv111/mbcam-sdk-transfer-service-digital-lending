@@ -1,6 +1,8 @@
 package com.mbc.mobileapp.controller;
 
+import com.mbc.common.api.models.dotp.shared.constant.TransactionSigningType;
 import com.mbc.common.bean.ResponseCode;
+import com.mbc.common.bean.TokenOtp;
 import com.mbc.common.controller.BaseController;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.rest.bean.DynamicKeyRequest;
@@ -11,6 +13,8 @@ import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
+import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
+import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
@@ -48,27 +52,28 @@ public class SalaryAdvanceController extends BaseController {
     @PostMapping("/limit")
     public GetSaLimitResponse getSaLimitResponse(@RequestBody DynamicKeyRequest dynamicKeyRequest, HttpServletRequest requestClient) {
         GetSaLimitResponse resp = new GetSaLimitResponse();
-        com.mbc.common.validator.base.Validator.Result result = null;
+        com.mbc.common.validator.base.Validator.Result result;
         GetSaLimitRequest param;
-        // mã hóa
+
         if (dynKeyEnabled) {
             DynamicKeyResponse<GetSaLimitRequest> dynamicKeyResponse = dynDecryptData1(dynamicKeyRequest, GetSaLimitRequest.class);
             param = dynamicKeyResponse.getData();
-
             if (param == null) {
                 result = new SimpleResult(dynamicKeyResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
                 resp.setResult(result);
+                return resp;
             }
         } else {
             param = mapDataRequestBody(dynamicKeyRequest.getDataEncrypt(), GetSaLimitRequest.class);
             if (param == null) {
                 result = new SimpleResult(ResponseCode.INVALID_INPUT.getCode(), false, ResponseCode.INVALID_INPUT.getDesc());
                 resp.setResult(result);
+                return resp;
             }
-
         }
+
         log.info("[DIGITAL-LOAN GET LIMIT] input data: {}", JSON.stringify(param));
-        // validate
+
         result = validate(param);
         if (!result.isOk()) {
             resp.setResult(result);
@@ -77,26 +82,23 @@ public class SalaryAdvanceController extends BaseController {
             CustInfo custInfo = getCustFromSession(param.getSessionId());
             if (custInfo != null) {
                 param.setHostCifId(custInfo.getHostCifId());
-                // param common
                 commonServiceRequest = (CommonServiceRequest) setBase(commonServiceRequest, param);
                 Principal principal = requestClient.getUserPrincipal();
                 commonServiceRequest.setPartnerId(principal.getName());
-//                commonServiceRequest.getGetSaLimitRequest(param);
                 commonServiceRequest.setSrvcCd(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = salaryAdvanceService.getSaLimit(commonServiceRequest, custInfo);
             }
-
         }
+
         resp.setRefNo(param.getRefNo());
         log.info("[LOAN GET LIMIT] out data: {}", JSON.stringify(resp));
-
         return resp;
     }
 
 
     @ApiOperation("Api init salary advance")
     @PostMapping("/init")
-    public SalaryAdvanceInitResponse getLoan(@RequestBody  DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
+    public SalaryAdvanceInitResponse initSalaryAdvance(@RequestBody DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
         SalaryAdvanceInitResponse resp = new SalaryAdvanceInitResponse();
         com.mbc.common.validator.base.Validator.Result result;
         SalaryAdvanceInitRequest param;
@@ -104,20 +106,22 @@ public class SalaryAdvanceController extends BaseController {
         if (dynKeyEnabled) {
             DynamicKeyResponse<SalaryAdvanceInitRequest> dynResponse = dynDecryptData1(dynRequest, SalaryAdvanceInitRequest.class);
             param = dynResponse.getData();
-
             if (param == null) {
                 result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
                 resp.setResult(result);
+                return resp;
             }
         } else {
             param = mapDataRequestBody(dynRequest.getDataEncrypt(), SalaryAdvanceInitRequest.class);
             if (param == null) {
                 result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
                 resp.setResult(result);
+                return resp;
             }
         }
+
         log.info("[SDK SALARY ADVANCE INIT] input data: {}", JSON.stringify(param));
-        // validation
+
         result = validate(param);
         if (!result.isOk()) {
             resp.setResult(result);
@@ -125,7 +129,6 @@ public class SalaryAdvanceController extends BaseController {
             CommonServiceRequest request = new CommonServiceRequest();
             CustInfo cust = getCustFromSession(param.getSessionId());
             if (cust != null) {
-                // Common param
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
@@ -133,9 +136,84 @@ public class SalaryAdvanceController extends BaseController {
                 request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = salaryAdvanceService.init(request, cust);
             }
-            resp.setRefNo(param.getRefNo());
         }
+
+        resp.setRefNo(param.getRefNo());
         log.info("[SDK SALARY ADVANCE INIT] out data: {}", JSON.stringify(resp));
+        return resp;
+    }
+
+
+    @ApiOperation("Api create salary advance")
+    @PostMapping("/create")
+    public SalaryAdvanceCreateResponse create(@RequestBody DynamicKeyRequest dynRequest,
+                                              HttpServletRequest requestClient) {
+        SalaryAdvanceCreateResponse resp = new SalaryAdvanceCreateResponse();
+        com.mbc.common.validator.base.Validator.Result result;
+        SalaryAdvanceCreateRequest param;
+
+        // 1. Decrypt
+        if (dynKeyEnabled) {
+            DynamicKeyResponse<SalaryAdvanceCreateRequest> dynResponse =
+                    dynDecryptData1(dynRequest, SalaryAdvanceCreateRequest.class);
+            param = dynResponse.getData();
+
+            if (param == null) {
+                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(),
+                        false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
+                resp.setResult(result);
+                return resp;
+            }
+        } else {
+            param = mapDataRequestBody(dynRequest.getDataEncrypt(), SalaryAdvanceCreateRequest.class);
+            if (param == null) {
+                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(),
+                        false, ResponseCode.INVALID_INPUT.getCode());
+                resp.setResult(result);
+                return resp;
+            }
+        }
+
+        log.info("[SDK SALARY ADVANCE CREATE] input data: {}", JSON.stringify(param));
+
+        // 2. Validate
+        result = validate(param);
+        if (!result.isOk()) {
+            resp.setResult(result);
+            return resp;
+        }
+
+        // 3. Process
+        CustInfo cust = getCustFromSession(param.getSessionId());
+        if (cust != null) {
+            CommonServiceRequest request = new CommonServiceRequest();
+            request = (CommonServiceRequest) setBase(request, param);
+            Principal principal = requestClient.getUserPrincipal();
+            request.setPartnerId(principal.getName());
+            request.setSalaryAdvanceCreateRequest(param);
+            request.setSrvcCd(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
+
+            // Set TokenOtp metadata cho dOTP (TransactionSigning)
+            TokenOtp tokenOtp = param.getTokenOTP();
+            if (tokenOtp != null) {
+                tokenOtp.setTransactionType(TransactionSigningType.SALARY_ADVANCE_CREATE);
+                // txsData: dữ liệu signing = session + device + cif + service
+                String txsData = param.getSessionId()
+                        + param.getDeviceIdCommon()
+                        + cust.getHostCifId()
+                        + Constant.SrvcCd.SRVC_SALARY_ADVANCE;
+                tokenOtp.setTxsData(txsData);
+            }
+
+            resp = salaryAdvanceService.create(request, cust, tokenOtp);
+        } else {
+            result = new SimpleResult(ResponseCode.SESSION_EXPIRED.getDesc(),
+                    false, ResponseCode.SESSION_EXPIRED.getCode());
+            resp.setResult(result);
+        }
+
+        resp.setRefNo(param.getRefNo());
+        log.info("[SDK SALARY ADVANCE CREATE] out data: {}", JSON.stringify(resp));
         return resp;
     }
 }

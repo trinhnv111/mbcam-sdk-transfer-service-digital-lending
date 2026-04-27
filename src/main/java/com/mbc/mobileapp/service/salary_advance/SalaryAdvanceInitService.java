@@ -28,10 +28,10 @@ public class SalaryAdvanceInitService extends ChainBase {
         addCommand(doCheckRefNo);
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
-        addCommand(doGetCustInfroFromMSCust);
         addCommand(doGetCustInfoFromEM);
         addCommand(doValidateSalaryCust);
         addCommand(doChecAMLSalaryAdvance);
+        addCommand(doGetCustInfroFromMSCust);
         addCommand(doSavaSalaryAdvanceTemRecord);
     }
 }

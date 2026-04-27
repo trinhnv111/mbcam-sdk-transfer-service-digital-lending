@@ -46,7 +46,7 @@ public class CommonServiceResponse extends Response {
     private TokenOtp tokenOTP;
 
     private String token;
-    
+
     private boolean ekycSuccess;
     
     private String hashBankId;

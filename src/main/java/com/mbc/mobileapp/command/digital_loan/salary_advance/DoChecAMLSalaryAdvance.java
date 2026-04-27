@@ -61,8 +61,8 @@ public class DoChecAMLSalaryAdvance implements Command {
                         .customerType("INDIVIDUAL")
                         .dateOfBirth(emCustInfo.getDateOfBirth())
                         .documentNumber(emCustInfo.getIdNumber())
-                        .gender(emCustInfo.getGender())           // MALE / FEMALE / OTHER
-                        .nationality(emCustInfo.getNationality())  // KH / VN
+                        .gender(emCustInfo.getGender())
+                        .nationality(emCustInfo.getNationality())
                         .requestedChannel(Constant.CHANNEL_MOBILE)
                         .requestedBusiness("CUSTOMER_ONBOARD")
                         .requestedUser(null)
@@ -113,7 +113,6 @@ public class DoChecAMLSalaryAdvance implements Command {
             }
 
         } catch (Exception e) {
-            // Fix: không throw RuntimeException, return error giống DoCustomerCheckAML
             request.setStatusCheckAML("CHECK_AML_FAIL");
             log.error("[SA INIT - CHECK AML] Exception - requestId:{}", request.getRequestId(), e);
             result = new SimpleResult(ResponseCode.CUSTOMER_INFO_CHECK_AML_FAIL.getDesc(),

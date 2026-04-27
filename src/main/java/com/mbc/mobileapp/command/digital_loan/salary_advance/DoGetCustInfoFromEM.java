@@ -42,23 +42,23 @@ public class DoGetCustInfoFromEM implements Command {
         ProcessContext processContext = (ProcessContext) context;
         Validator.Result result = Validator.Result.OK;
         CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
-        CustInfo custInfo = request.getCust();
+        CustInfo custInfo = processContext.getCustomer();
 
         try {
-            // Lấy msisdn + idNumber từ MS Customer (T24)
+            // Lấy msisdn + idNumber từ MS Customer
             CustomerInfoT24 custT24 = (CustomerInfoT24) processContext.get("customerInfoMS");
 
             String idNumber = null;
             String msisdn = null;
 
             if (custT24 != null) {
-                // idNumber từ person.personalID[0].iDCode
+                // idNumber
                 if (custT24.getPerson() != null
                         && custT24.getPerson().getPersonalID() != null
                         && !custT24.getPerson().getPersonalID().isEmpty()) {
                     idNumber = custT24.getPerson().getPersonalID().get(0).getIDCode();
                 }
-                // msisdn từ contactInfo.phone[0].phoneNo
+                // msisdn
                 if (custT24.getContactInfo() != null
                         && custT24.getContactInfo().getPhone() != null
                         && !custT24.getContactInfo().getPhone().isEmpty()) {
@@ -79,9 +79,9 @@ public class DoGetCustInfoFromEM implements Command {
 
             // Call eMoney API customer/info
             ExcuteEmoney<EmCustInfoData> emResponse = apiEmoney.getCustomerInfo(
-                    msisdn, idNumber, request.getRequestId());
+                    msisdn, idNumber, custInfo.getId(), request.getRequestId());
 
-            // Handle null response (timeout)
+            // timeout
             if (Objects.isNull(emResponse)) {
                 log.error("[SA INIT - GET CUST FROM EM] Response null (timeout) - requestId:{}",
                         request.getRequestId());
@@ -104,7 +104,7 @@ public class DoGetCustInfoFromEM implements Command {
                 }
                 result = new SimpleResult(errorCode.getCode(), false, errorCode.getDesc());
                 processContext.setResult(result);
-//                return true;
+                return true;
             }
 
             // Success — parse data
