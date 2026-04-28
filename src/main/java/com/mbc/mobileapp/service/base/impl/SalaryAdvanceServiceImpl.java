@@ -1,21 +1,19 @@
 package com.mbc.mobileapp.service.base.impl;
 
+import com.mbc.common.api.models.customer.T24CustomerInfo;
 import com.mbc.common.bean.ProcessContext;
-import com.mbc.common.bean.TokenOtp;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
-import com.mbc.common.util.Constant;
+import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
 import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
-import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceCreateService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
     private final SalaryAdvanceInitService salaryAdvanceInitService;
     private final GetSaLimitService getSaLimitService;
-    private final SalaryAdvanceCreateService salaryAdvanceCreateService;
 
 
     @Override
@@ -80,53 +77,15 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         return response;
     }
 
-    @Override
-    public SalaryAdvanceCreateResponse create(CommonServiceRequest request, CustInfo cust, TokenOtp tokenOtp) {
-        ProcessContext context = loadContext(request, cust);
-
-        // Đặt TokenOtp vào context — ValidateOTP sẽ đọc từ đây
-        context.putVar(Constant.KeyVar.OTP, tokenOtp);
-
-        SalaryAdvanceCreateResponse response = new SalaryAdvanceCreateResponse();
-        Validator.Result result;
-        try {
-            salaryAdvanceCreateService.execute(context);
-            logService.execute(context);
-            result = context.getResult();
-            response.setResult(result);
-
-            if (result.isOk()) {
-                // Lấy response data từ context (DoSaveSalaryAdvanceRecord đã build)
-                SalaryAdvanceCreateResponse createData =
-                        (SalaryAdvanceCreateResponse) context.get("createResponse");
-
-                if (createData != null) {
-                    response.setCustId(createData.getCustId());
-                    response.setHostCifId(createData.getHostCifId());
-                    response.setCustomerName(createData.getCustomerName());
-                    response.setNationalId(createData.getNationalId());
-                    response.setIdType(createData.getIdType());
-                    response.setPhoneNumber(createData.getPhoneNumber());
-                    response.setEmail(createData.getEmail());
-                    response.setAddressProvince(createData.getAddressProvince());
-                    response.setAddressDistrict(createData.getAddressDistrict());
-                    response.setAddressWard(createData.getAddressWard());
-                    response.setMaritalStatus(createData.getMaritalStatus());
-                    response.setHasUsdAccount(createData.getHasUsdAccount());
-                    response.setUsdAccountNo(createData.getUsdAccountNo());
-                    response.setLimit(createData.getLimit());
-                    response.setCurrency(createData.getCurrency());
-                }
-            }
-        } catch (Exception e) {
-            log.error("[SA CREATE] Exception: {}", e.toString());
-            context.setResult(Validator.Result.UNKNOWN);
-        }
-        return response;
-    }
-
     /**
      * Build CustInfoOutput từ data eMoney + MS Customer+ session
+     *   - fullName      : eMoney familyName+firstName
+     *   - idNumber       : eMoney customerInfo.idNumber
+     *   - phoneNumber    : msCustomer
+     *   - email          : input
+     *   - maritalStatus  :  input
+     *   - placeOfBirth   :  input
+     *   - currentAddress :  msCustomer
      */
     private CustInfoOutput buildCustInfoOutput(EmCustomerInfo emCustInfo, CustInfo custInfo,
                                                 String tempRecordId, CustomerInfoT24 custT24) {
@@ -136,12 +95,32 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         // Fullname: eMoney familyName + firstName
         String emFullName = emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName();
         output.setFullName(emFullName);
+//        if (custT24 != null && custT24.getCustomerName() != null
+//                && !Utility.isNull(custT24.getCustomerName().getEngName())) {
+//            output.setFullName(custT24.getCustomerName().getEngName());
+//        }
 
         // idNumber
         output.setIdNumber(emCustInfo.getIdNumber());
 
         // phoneNumber (msCustomer)
         output.setPhoneNumber(custInfo.getPhoneNo());
+
+        // email
+//        if (custT24 != null && custT24.getContactInfo() != null
+//                && !Utility.isNull(custT24.getContactInfo().getEmailAddress())) {
+//            output.setEmail(custT24.getContactInfo().getEmailAddress());
+//        }
+
+        // maritalStatus
+//        if (custT24 != null && !Utility.isNull(custT24.getMaritalStatus())) {
+//            output.setMaritalStatus(custT24.getMaritalStatus());
+//        }
+//
+//        // Place of Birth
+//        if (!Utility.isNull(custInfo.getIdTypPlace())) {
+//            output.setPlaceOfBirth(custInfo.getIdTypPlace());
+//        }
 
         // Current Address: T24 customerAddress
         CustInfoOutput.Address currentAddress = new CustInfoOutput.Address();

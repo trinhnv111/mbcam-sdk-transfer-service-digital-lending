@@ -8,7 +8,6 @@ import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetLoanRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.PaymentRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitRequest;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
@@ -255,7 +254,6 @@ public class CommonServiceRequest extends Request {
 
     //region Salary Advance
     private SalaryAdvanceInitRequest salaryAdvanceInitRequest;
-    private SalaryAdvanceCreateRequest salaryAdvanceCreateRequest;
     //endregion\
 
     // get limit

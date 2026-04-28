@@ -1,11 +1,8 @@
 package com.mbc.mobileapp.utils;
 
-import com.mbc.common.util.Utility;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -16,29 +13,19 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Utility cho eMoney Digital Lending API
- * - Build HTTP headers (Authorization: epa <API_KEY>)
- * - RSA encrypt (load public key từ classpath .pem)
+ * Utility cho eMoney Digital Lending API — RSA encrypt
  *
  * Config (application.properties):
- *   emoney.digital-lending.api-key
  *   emoney.digital-lending.public-key-path  (relative to classpath, default: pubic_key.pem)
  */
 @Slf4j
 @Component
 public class EmoneyApiUtil {
 
-    @Value("${emoney.digital-lending.api-key:}")
-    private String apiKey;
-
-    // Mặc định dùng pubic_key.pem nằm thẳng trong src/main/resources
     @Value("${emoney.digital-lending.public-key-path:pubic_key.pem}")
     private String publicKeyPath;
 
@@ -55,19 +42,7 @@ public class EmoneyApiUtil {
     }
 
     /**
-     * Build HTTP headers cho eMoney API
-     * Authorization: epa <API_KEY>
-     */
-    public HttpHeaders buildHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "epa " + apiKey);
-        return headers;
-    }
-
-    /**
-     * Build encrypted string cho eMoney API customer/info
-     * Format: RSA(msisdn|idNumber)
+     * RSA(msisdn|idNumber) cho eMoney API customer/info
      */
     public String encryptCustomerInfo(String msisdn, String idNumber) {
         log.info("[EmoneyApiUtil] encryptCustomerInfo - msisdn: {}", msisdn);
@@ -75,9 +50,6 @@ public class EmoneyApiUtil {
         return rsaEncrypt(plainText);
     }
 
-    /**
-     * Encrypt plaintext bằng RSA public key (PKCS1Padding)
-     */
     public String rsaEncrypt(String plainText) {
         if (rsaPublicKey == null) {
             throw new RuntimeException("[EmoneyApiUtil] rsaPublicKey is null, cannot encrypt. Kiểm tra file: " + publicKeyPath);
@@ -93,9 +65,6 @@ public class EmoneyApiUtil {
         }
     }
 
-    /**
-     * Load RSA public key từ classpath resource (.pem — X.509 / PKCS#8 format)
-     */
     private PublicKey loadPublicKey(String path) {
         try {
             ClassPathResource resource = new ClassPathResource(path);
@@ -103,7 +72,6 @@ public class EmoneyApiUtil {
                 log.error("[EmoneyApiUtil] Public key file NOT FOUND in classpath: '{}'", path);
                 return null;
             }
-
 
             String keyContent;
             try (BufferedReader reader = new BufferedReader(
@@ -131,21 +99,5 @@ public class EmoneyApiUtil {
             log.error("[EmoneyApiUtil] Failed to load public key from: '{}' — {}", path, e.getMessage(), e);
             return null;
         }
-    }
-
-
-    public HttpHeaders buildEmoneyHeaders(String custId, String requestId) {
-        String messageId = UUID.randomUUID().toString();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "epa " + apiKey);
-        headers.set("clientMessageId", messageId);
-        List<String> infoLog = Arrays.asList(
-                Utility.isNull(custId) ? "" : custId,
-                Utility.isNull(requestId) ? "" : requestId,
-                messageId
-        );
-        headers.put("info-log", infoLog);
-        return headers;
     }
 }

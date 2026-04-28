@@ -12,8 +12,5 @@ pluginManagement {
 
 rootProject.name = 'mbcam-sdk-transfer-service'
 
-// Khai báo module
 include ':mbcam-commonservice'
-
-// Trỏ đường dẫn chính xác vào folder con bên trong cùng
-project(':mbcam-commonservice').projectDir = new File(settingsDir, '../../mbcam-commonservice-feature-salary_loans/mbcam-commonservice-feature-salary_loans')
+project(':mbcam-commonservice').projectDir = new File(settingsDir, '../../mbcam-commonservice-feature-digital-loan/mbcam-commonservice-feature-digital-loan')

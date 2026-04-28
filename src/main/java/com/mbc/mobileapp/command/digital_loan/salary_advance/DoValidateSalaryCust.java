@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * Command: Validate thông tin khách hàng từ eMoney
  * 1. Match National ID (session vs eMoney)
- * 2.  18<= Tuổi <60
+ * 2. Tuổi >= 18
  * 3. Lương liên tục >= 6 tháng (từ salaryInfo.continuousSalary6Months)
  */
 @Service
@@ -33,7 +33,6 @@ import java.util.Objects;
 public class DoValidateSalaryCust implements Command {
 
     private static final int MIN_AGE = 18;
-    private static final int MAX_AGE = 60;
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     @Override
@@ -86,7 +85,7 @@ public class DoValidateSalaryCust implements Command {
             if (now.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
                 age--;
             }
-            if (age < MIN_AGE || age > MAX_AGE) {
+            if (age < MIN_AGE) {
                 log.error("[SA INIT - VALIDATE] Age invalid: {}", age);
                 result = new SimpleResult("AGE_NOT_VALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
                 processContext.setResult(result);
