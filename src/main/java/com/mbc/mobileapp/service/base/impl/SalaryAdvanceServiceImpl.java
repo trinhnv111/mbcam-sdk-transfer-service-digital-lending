@@ -2,19 +2,25 @@ package com.mbc.mobileapp.service.base.impl;
 
 import com.mbc.common.api.models.customer.T24CustomerInfo;
 import com.mbc.common.bean.ProcessContext;
+import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
+import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
+import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateResponse;
+import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceVerifyOtpResponse;
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
 import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
+import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceCreateService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
+import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceVerifyOtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +31,8 @@ import org.springframework.stereotype.Service;
 public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
     private final SalaryAdvanceInitService salaryAdvanceInitService;
     private final GetSaLimitService getSaLimitService;
+    private final SalaryAdvanceCreateService salaryAdvanceCreateService;
+    private final SalaryAdvanceVerifyOtpService salaryAdvanceVerifyOtpService;
 
 
     @Override
@@ -73,6 +81,50 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         } catch (Exception e) {
             log.error(e.toString());
             context.setResult(Validator.Result.UNKNOWN);
+        }
+        return response;
+    }
+
+    @Override
+    public SalaryAdvanceCreateResponse create(CommonServiceRequest request, CustInfo custInfo) {
+        SalaryAdvanceCreateResponse response = new SalaryAdvanceCreateResponse();
+        try {
+            ProcessContext context = loadContext(request, custInfo);
+
+            salaryAdvanceCreateService.execute(context);
+            if (context.getResult() != null && !context.getResult().isOk()) {
+                response.setResult(context.getResult());
+            } else {
+                response.setResult(Validator.Result.OK);
+            }
+
+        } catch (Exception e) {
+            log.error("[CREATE SALARY ADVANCE] fail: ", e);
+            response.setResult(new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode()));
+        }
+        return response;
+    }
+
+    @Override
+    public SalaryAdvanceVerifyOtpResponse verifyOtp(CommonServiceRequest request, CustInfo custInfo) {
+        SalaryAdvanceVerifyOtpResponse response = new SalaryAdvanceVerifyOtpResponse();
+        try {
+            ProcessContext context = loadContext(request, custInfo);
+
+            salaryAdvanceVerifyOtpService.execute(context);
+            if (context.getResult() != null && !context.getResult().isOk()) {
+                response.setResult(context.getResult());
+            } else {
+                Double limit = (Double) context.get("sa_limit");
+                String currency = (String) context.get("sa_currency");
+                response.setLimit(limit);
+                response.setCurrency(currency);
+                response.setResult(Validator.Result.OK);
+            }
+
+        } catch (Exception e) {
+            log.error("[VERIFY OTP SALARY ADVANCE] fail: ", e);
+            response.setResult(new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode()));
         }
         return response;
     }

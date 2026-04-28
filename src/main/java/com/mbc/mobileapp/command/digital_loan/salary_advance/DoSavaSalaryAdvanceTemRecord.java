@@ -2,6 +2,11 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
+import com.mbc.common.entity.ComTrans;
+import com.mbc.common.entity.ComTransProcess;
+import com.mbc.common.repository.ComTransProcessRepo;
+import com.mbc.common.repository.ComTransRepo;
+import com.mbc.common.util.Constant;
 import com.mbc.common.entity.ComTransDtlLmt;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLmtRepository;
@@ -40,6 +45,8 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     private final ComTransDtlLmtRepository comTransDtlLmtRepo;
+    private final ComTransRepo comTransRepo;
+    private final ComTransProcessRepo comTransProcessRepo;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -56,10 +63,27 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
             CustomerInfoT24 custT24 = (CustomerInfoT24) context.get("customerInfoMS");
             SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
 
+            ComTrans comTrans = new ComTrans();
+            comTrans.setSessionId(request.getSessionId());
+            comTrans.setCustId(custInfo.getId());
+            comTrans.setCreatedBy(custInfo.getUserId());
+            comTrans.setStatus(Constant.COM_STATUS_INT);
+            comTrans.setSrvcCd(request.getSrvcCd());
+            comTrans.setTransferType("INHOUSE");
+            comTrans.setTransactionType("INHOUSE");
+            comTransRepo.saveAndFlush(comTrans);
+
+            ComTransProcess comTransProcess = new ComTransProcess();
+            comTransProcess.setStatus(Constant.COM_STATUS_INT);
+            comTransProcess.setTransId(comTrans.getId());
+            comTransProcess.setSrvcCd(comTrans.getSrvcCd());
+            comTransProcessRepo.saveAndFlush(comTransProcess);
+
             ComTransDtlLmt tempRecord = new ComTransDtlLmt();
 
-            // ID (UUID)
-            tempRecord.setId(Utility.getUUID());
+            // ID (Từ ComTrans)
+            tempRecord.setId(comTrans.getId());
+            tempRecord.setTempId(comTrans.getId());
 
             // host_cif_id (từ session)
             tempRecord.setHostCifId(custInfo.getHostCifId());
