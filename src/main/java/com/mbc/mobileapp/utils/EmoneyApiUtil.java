@@ -55,7 +55,7 @@ public class EmoneyApiUtil {
             throw new RuntimeException("[EmoneyApiUtil] rsaPublicKey is null, cannot encrypt. Kiểm tra file: " + publicKeyPath);
         }
         try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING");
             cipher.init(Cipher.ENCRYPT_MODE, rsaPublicKey);
             byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);

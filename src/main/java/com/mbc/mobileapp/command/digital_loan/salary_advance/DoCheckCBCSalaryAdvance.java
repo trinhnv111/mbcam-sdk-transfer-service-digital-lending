@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,6 +27,12 @@ public class DoCheckCBCSalaryAdvance implements Command {
 
     private final ApiCBC apiCBC;
 
+    @Value("${api.cbc.requestBy}")
+    private String cbcRequestBy;
+
+    @Value("${api.cbc.appCode}")
+    private String cbcAppCode;
+
     @Override
     public boolean execute(Context ctx) throws Exception {
         ProcessContext context = (ProcessContext) ctx;
@@ -36,8 +43,8 @@ public class DoCheckCBCSalaryAdvance implements Command {
         try {
             String clientMessageId = request.getRefNo();
             String clientUserId = custInfo.getUserId();
-            String requestBy = custInfo.getUserId();
-            String appCode = "MOBILEAPP";
+            String requestBy = cbcRequestBy;
+            String appCode = cbcAppCode;
             String idNumber = custInfo.getIdTypNo(); // Or getting from other source if necessary
 
             if (Utility.isNull(idNumber)) {

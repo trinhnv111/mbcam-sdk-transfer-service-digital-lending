@@ -9,5 +9,4 @@ import lombok.Setter;
 public class SalaryAdvanceVerifyOtpResponse extends BaseResponse {
     private Double limit;
     private String currency;
-    // Có thể bổ sung thêm các trường khác nếu frontend cần hiển thị
 }
