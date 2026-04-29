@@ -30,9 +30,9 @@ public class DoValidateSalaryAdvanceCreate implements Command {
             return !result.isOk();
         }
 
-        if (Utility.isNull(createRequest.getTempRecordId())) {
-            log.error("[DoValidateSalaryAdvanceCreate] tempRecordId is null or empty");
-            result = new SimpleResult("tempRecordId is required", false, ResponseCode.INVALID_INPUT.getCode());
+        if (Utility.isNull(createRequest.getTransId())) {
+            log.error("[DoValidateSalaryAdvanceCreate] transId is null or empty");
+            result = new SimpleResult("transId is required", false, ResponseCode.INVALID_INPUT.getCode());
             context.setResult(result);
             return !result.isOk();
         }

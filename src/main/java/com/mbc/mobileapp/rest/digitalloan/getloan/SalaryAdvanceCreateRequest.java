@@ -7,7 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SalaryAdvanceCreateRequest extends BaseRequest {
-    private String tempRecordId; // ID bản ghi tạm (id trong COM_LOAN_DISBUR_LMT)
+    private String transId; // ID giao dịch trả về từ init
+    private String otp; // Mã OTP nhập
     private String email;
     private String employmentStartDate; // YYYYMMDD
     private String maritalStatus;

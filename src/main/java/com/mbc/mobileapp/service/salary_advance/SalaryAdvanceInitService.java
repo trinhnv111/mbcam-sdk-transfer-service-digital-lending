@@ -20,8 +20,7 @@ public class SalaryAdvanceInitService extends ChainBase {
     private final DoValidateSalaryCust doValidateSalaryCust;
     private final DoChecAMLSalaryAdvance doChecAMLSalaryAdvance;
     private final DoGetCustInfroFromMSCust doGetCustInfroFromMSCust;
-    private final DoSavaSalaryAdvanceTemRecord doSavaSalaryAdvanceTemRecord;
-
+    private final DoInitSalaryAdvanceLimit doInitSalaryAdvanceLimit;
 
     @PostConstruct
     public void addCommandChain() {
@@ -32,6 +31,6 @@ public class SalaryAdvanceInitService extends ChainBase {
         addCommand(doValidateSalaryCust);
         addCommand(doChecAMLSalaryAdvance);
         addCommand(doGetCustInfroFromMSCust);
-        addCommand(doSavaSalaryAdvanceTemRecord);
+        addCommand(doInitSalaryAdvanceLimit);
     }
 }

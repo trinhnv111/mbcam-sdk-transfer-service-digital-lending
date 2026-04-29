@@ -16,7 +16,7 @@ import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceVerifyOtpRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceVerifyOtpResponse;
+
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -188,48 +188,4 @@ public class SalaryAdvanceController extends BaseController {
         return resp;
     }
 
-    @ApiOperation("Api verify OTP salary advance")
-    @PostMapping("/verify-otp")
-    public SalaryAdvanceVerifyOtpResponse verifyOtpLoan(@RequestBody DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
-        SalaryAdvanceVerifyOtpResponse resp = new SalaryAdvanceVerifyOtpResponse();
-        com.mbc.common.validator.base.Validator.Result result;
-        SalaryAdvanceVerifyOtpRequest param;
-
-        if (dynKeyEnabled) {
-            DynamicKeyResponse<SalaryAdvanceVerifyOtpRequest> dynResponse = dynDecryptData1(dynRequest, SalaryAdvanceVerifyOtpRequest.class);
-            param = dynResponse.getData();
-
-            if (param == null) {
-                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
-                resp.setResult(result);
-            }
-        } else {
-            param = mapDataRequestBody(dynRequest.getDataEncrypt(), SalaryAdvanceVerifyOtpRequest.class);
-            if (param == null) {
-                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
-                resp.setResult(result);
-            }
-        }
-        log.info("[SDK SALARY ADVANCE VERIFY OTP] input data: {}", JSON.stringify(param));
-        // validation
-        result = validate(param);
-        if (!result.isOk()) {
-            resp.setResult(result);
-        } else {
-            CommonServiceRequest request = new CommonServiceRequest();
-            CustInfo cust = getCustFromSession(param.getSessionId());
-            if (cust != null) {
-                // Common param
-                request = (CommonServiceRequest) setBase(request, param);
-                Principal principal = requestClient.getUserPrincipal();
-                request.setPartnerId(principal.getName());
-                request.setSalaryAdvanceVerifyOtpRequest(param);
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
-                resp = salaryAdvanceService.verifyOtp(request, cust);
-            }
-            resp.setRefNo(param.getRefNo());
-        }
-        log.info("[SDK SALARY ADVANCE VERIFY OTP] out data: {}", JSON.stringify(resp));
-        return resp;
-    }
 }

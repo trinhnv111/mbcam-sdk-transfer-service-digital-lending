@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CustInfoOutput {
 
-    /** ID bản ghi tạm (ẩn — FE dùng để gửi ngược lại ở API Confirm) */
-    private String tempRecordId;
+    /** ID giao dịch (ẩn — FE dùng để gửi OTP và gọi Create) */
+    private String transId;
 
     /** Fullname */
     private String fullName;

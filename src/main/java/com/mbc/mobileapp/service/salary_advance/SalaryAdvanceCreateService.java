@@ -16,13 +16,14 @@ public class SalaryAdvanceCreateService extends ChainBase {
     private final DoCheckRefNo doCheckRefNo;
     private final CheckCustomerState checkCustomerState;
     private final DoCheckSrvc doCheckSrvc;
+    private final DoMapSalaryAdvanceOTP doMapSalaryAdvanceOTP;
+    private final ValidateOTP validateOTP;
     private final DoValidateSalaryAdvanceCreate doValidateSalaryAdvanceCreate;
-    private final DoUpdateSalaryAdvanceTemRecord doUpdateSalaryAdvanceTemRecord;
+    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
     private final DoGetPd doGetPd;
     private final DoValidatePDSalaryAdvance doValidatePDSalaryAdvance;
-    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
-    private final GenerateOTP generateOTP;
-    private final DoSendSmsMessage doSendSmsMessage;
+    private final DoCalculateLimitSalaryAdvance doCalculateLimitSalaryAdvance;
+    private final DoUpdateSalaryAdvanceLimit doUpdateSalaryAdvanceLimit;
 
     @PostConstruct
     public void addCommandChain() {
@@ -30,23 +31,24 @@ public class SalaryAdvanceCreateService extends ChainBase {
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
 
+        // Map and Verify OTP
+        addCommand(doMapSalaryAdvanceOTP);
+        addCommand(validateOTP);
+
         // Validate Input
         addCommand(doValidateSalaryAdvanceCreate);
 
-        // Update DB
-        addCommand(doUpdateSalaryAdvanceTemRecord);
+        // Check CBC
+        addCommand(doCheckCBCSalaryAdvance);
 
         // Check PD
         addCommand(doGetPd);
         addCommand(doValidatePDSalaryAdvance);
 
-        // Check CBC
-        addCommand(doCheckCBCSalaryAdvance);
+        // Calculate Limit
+        addCommand(doCalculateLimitSalaryAdvance);
 
-        // Gen OTP
-        addCommand(generateOTP);
-
-        // Send SMS
-        addCommand(doSendSmsMessage);
+        // Update Record and Limit
+        addCommand(doUpdateSalaryAdvanceLimit);
     }
 }

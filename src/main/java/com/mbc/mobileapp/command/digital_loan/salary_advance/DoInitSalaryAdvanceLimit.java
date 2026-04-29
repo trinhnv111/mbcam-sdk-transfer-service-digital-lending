@@ -26,22 +26,13 @@ import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 
-/**
- * Command: Lưu bản ghi tạm vào COM_LOAN_DISBUR_LMT
- * Data sources:
- *   - EmCustomerInfo (Nhóm 1 eMoney): gender, nationality, dateOfBirth, occupation, companyName
- *   - EmSalaryInfo (Nhóm 2 eMoney): salary3mAvgUSD
- *   - CustomerInfoT24 (MS Customer): fullName
- *   - CustInfo (session): hostCifId, nationalId (idTypNo)
- */
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DoSavaSalaryAdvanceTemRecord implements Command {
+public class DoInitSalaryAdvanceLimit implements Command {
 
     private static final String LOAN_TYPE_SALARY_ADVANCE = "SALARY_ADVANCE";
-    private static final String STEP_CHECK_CUST = "CHECK_CUST";
-    private static final String STATUS_SUCCESS = "Success";
+    private static final String STEP_INIT = "INIT";
     private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     private final ComTransDtlLmtRepository comTransDtlLmtRepo;
@@ -56,7 +47,7 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
         CustInfo custInfo = context.getCustomer();
 
         try {
-            AppLog.info("[SA INIT - SAVE TEMP RECORD] Start - requestId: " + request.getRequestId());
+            AppLog.info("[SA INIT] Init limit record - requestId: " + request.getRequestId());
 
             EmCustomerInfo emCustInfo = (EmCustomerInfo) context.get("emCustomerInfo");
             EmSalaryInfo emSalaryInfo = (EmSalaryInfo) context.get("emSalaryInfo");
@@ -80,49 +71,34 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
             comTransProcessRepo.saveAndFlush(comTransProcess);
 
             ComTransDtlLmt tempRecord = new ComTransDtlLmt();
-
-            // ID (Từ ComTrans)
             tempRecord.setId(comTrans.getId());
             tempRecord.setTempId(comTrans.getId());
-
-            // host_cif_id (từ session)
             tempRecord.setHostCifId(custInfo.getHostCifId());
-
-            // fullName: eMoney familyName + firstName
-//            if (custT24 != null && custT24.getCustomerName() != null
-//                    && !Utility.isNull(custT24.getCustomerName().getEngName())) {
-//                tempRecord.setFullName(custT24.getCustomerName().getEngName());
-//            }
-            tempRecord.setFullName(emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName());
-
-            // nationalId
-            tempRecord.setNationalId(custInfo.getIdTypNo());
-
-            // gender
-            tempRecord.setGender(emCustInfo.getGender());
-
-            // date_of_birth
-            if (!Utility.isNull(emCustInfo.getDateOfBirth())) {
-                try {
-                    tempRecord.setDateOfBirth(sdf.parse(emCustInfo.getDateOfBirth()));
-                } catch (Exception e) {
-                    AppLog.warning("[SA INIT] Cannot parse dateOfBirth: " + emCustInfo.getDateOfBirth());
+            
+            if (emCustInfo != null) {
+                tempRecord.setFullName(emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName());
+                tempRecord.setGender(emCustInfo.getGender());
+                tempRecord.setNationality(emCustInfo.getNationality());
+                tempRecord.setOccupation(emCustInfo.getCurrentOccupation());
+                tempRecord.setCompanyName(emCustInfo.getCompanyName());
+                if (!Utility.isNull(emCustInfo.getDateOfBirth())) {
+                    try {
+                        tempRecord.setDateOfBirth(sdf.parse(emCustInfo.getDateOfBirth()));
+                    } catch (Exception e) {
+                        AppLog.warning("[SA INIT] Cannot parse dateOfBirth: " + emCustInfo.getDateOfBirth());
+                    }
                 }
             }
 
-            // nationality
-            tempRecord.setNationality(emCustInfo.getNationality());
+            tempRecord.setNationalId(custInfo.getIdTypNo());
 
-            // marital_status
             if (custT24 != null && !Utility.isNull(custT24.getMaritalStatus())) {
                 tempRecord.setMaritalStatus(custT24.getMaritalStatus());
             }
 
-            // address
             if (custT24 != null && custT24.getContactInfo() != null
                     && custT24.getContactInfo().getAddress() != null
                     && !custT24.getContactInfo().getAddress().isEmpty()) {
-
 
                 com.mbc.common.services.il.customerinfo.CustomerAddress custAddress = custT24.getContactInfo().getAddress().get(0);
                 for (com.mbc.common.services.il.customerinfo.CustomerAddress addr : custT24.getContactInfo().getAddress()) {
@@ -131,46 +107,29 @@ public class DoSavaSalaryAdvanceTemRecord implements Command {
                         break;
                     }
                 }
-
                 tempRecord.setAddressProvince(custAddress.getProvinceCode());
                 tempRecord.setAddressDistrict(custAddress.getDistrictCode());
                 tempRecord.setAddressWard(custAddress.getWardCode());
             }
 
-            // occupation (từ eMoney)
-            tempRecord.setOccupation(emCustInfo.getCurrentOccupation());
-
-            // company_name (từ eMoney)
-            tempRecord.setCompanyName(emCustInfo.getCompanyName());
-
-            // employment_start_date → eMoney không có, skip
-
-            // monthly_income (từ salaryInfo.salary3mAvgUSD)
             if (emSalaryInfo != null) {
                 tempRecord.setMonthlyIncome(emSalaryInfo.getSalary3mAvgUSD());
                 tempRecord.setMonthlySalaryAmountUsd(emSalaryInfo.getSalary3mAvgUSD());
             }
 
-            // loan_type
             tempRecord.setLoanType(LOAN_TYPE_SALARY_ADVANCE);
-
-            // step + status
-            tempRecord.setStep(STEP_CHECK_CUST);
-            tempRecord.setStatus(STATUS_SUCCESS);
+            tempRecord.setStep(STEP_INIT);
+            tempRecord.setStatus(Constant.COM_STATUS_INT);
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
 
-            // Put tempRecordId vào context
-            context.put("tempRecordId", tempRecord.getId());
+            context.put("transId", tempRecord.getId());
 
-            AppLog.info("[SA INIT - SAVE TEMP RECORD] Saved - id: " + tempRecord.getId());
-
-//            return true;
+            AppLog.info("[SA INIT] Saved INT record - id: " + tempRecord.getId());
 
         } catch (Exception e) {
-            AppLog.error("[Exception Save SA Temp Record] requestId: " + request.getRequestId() + " desc: ", e);
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-                    ResponseCode.TRANSACTION_FAIL.getCode());
+            AppLog.error("[Exception Save SA Init Record] requestId: " + request.getRequestId() + " desc: ", e);
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
         }
         context.setResult(result);
         return !result.isOk();

@@ -15,12 +15,11 @@ import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateResponse;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceVerifyOtpResponse;
+
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
 import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceCreateService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
-import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceVerifyOtpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,6 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
     private final SalaryAdvanceInitService salaryAdvanceInitService;
     private final GetSaLimitService getSaLimitService;
     private final SalaryAdvanceCreateService salaryAdvanceCreateService;
-    private final SalaryAdvanceVerifyOtpService salaryAdvanceVerifyOtpService;
 
 
     @Override
@@ -71,11 +69,12 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
             if (result.isOk()) {
                 // Lấy data từ context
                 EmCustomerInfo emCustInfo = (EmCustomerInfo) context.get("emCustomerInfo");
-                String tempRecordId = (String) context.get("tempRecordId");
+                String transId = (String) context.get("transId");
                 CustomerInfoT24 custT24 = (CustomerInfoT24) context.get("customerInfoMS");
 
                 // Build response trả FE
-                CustInfoOutput custInfoOutput = buildCustInfoOutput(emCustInfo, cust, tempRecordId, custT24);
+                CustInfoOutput custInfoOutput = buildCustInfoOutput(emCustInfo, cust, transId, custT24);
+                response.setTransId(transId);
                 response.setCustInfo(custInfoOutput);
             }
         } catch (Exception e) {
@@ -105,27 +104,6 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         return response;
     }
 
-    @Override
-    public SalaryAdvanceVerifyOtpResponse verifyOtp(CommonServiceRequest request, CustInfo custInfo) {
-        SalaryAdvanceVerifyOtpResponse response = new SalaryAdvanceVerifyOtpResponse();
-        try {
-            ProcessContext context = loadContext(request, custInfo);
-
-            salaryAdvanceVerifyOtpService.execute(context);
-            if (context.getResult() != null && !context.getResult().isOk()) {
-                response.setResult(context.getResult());
-            } else {
-                Double limit = (Double) context.get("sa_limit");
-                String currency = (String) context.get("sa_currency");
-                response.setLimit(limit);
-                response.setCurrency(currency);
-                response.setResult(Validator.Result.OK);
-            }
-
-        } catch (Exception e) {
-            log.error("[VERIFY OTP SALARY ADVANCE] fail: ", e);
-            response.setResult(new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode()));
-        }
         return response;
     }
 
@@ -140,9 +118,9 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
      *   - currentAddress :  msCustomer
      */
     private CustInfoOutput buildCustInfoOutput(EmCustomerInfo emCustInfo, CustInfo custInfo,
-                                                String tempRecordId, CustomerInfoT24 custT24) {
+                                                String transId, CustomerInfoT24 custT24) {
         CustInfoOutput output = new CustInfoOutput();
-        output.setTempRecordId(tempRecordId);
+        output.setTransId(transId);
 
         // Fullname: eMoney familyName + firstName
         String emFullName = emCustInfo.getFamilyName() + " " + emCustInfo.getFirstName();
