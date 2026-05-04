@@ -57,24 +57,34 @@ public class DoCheckCBCSalaryAdvance implements Command {
             ExecuteT24Output<Map<String, Object>> cbcResponse = apiCBC.getCbcData(clientMessageId, clientUserId, requestBy, appCode, Collections.singletonList(idNumber));
 
             if (cbcResponse != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(cbcResponse.getStatus())) {
-                Map<String, Object> data = (Map<String, Object>) cbcResponse.getData().get("data");
+                Map<String, Object> data = cbcResponse.getData();
                 if (data != null) {
                     String statusCode = (String) data.get("statusCode");
+                    String statusDesc = (String) data.get("statusDesc");
+                    log.info("[DoCheckCBCSalaryAdvance] CBC statusCode: {}, statusDesc: {}", statusCode, statusDesc);
+
                     if ("012".equals(statusCode) || "013".equals(statusCode) || "014".equals(statusCode)) {
-                         log.error("[DoCheckCBCSalaryAdvance] CBC Report status invalid. statusCode: {}", statusCode);
-                         result = new SimpleResult("CBC Check Failed", false, ResponseCode.TRANSACTION_FAIL.getCode());
-                    } else {
+                        // 012 = Error from CBC | 013 = Waiting approval | 014 = Declined → FAIL
+                        log.error("[DoCheckCBCSalaryAdvance] CBC Report status invalid. statusCode: {}", statusCode);
+                        result = new SimpleResult("CBC Check Failed - " + statusDesc, false, ResponseCode.TRANSACTION_FAIL.getCode());
+
+                    } else if ("000".equals(statusCode)) {
+                        // 000 = Success (có bản tin Effective) → check history12MStatus
                         String history12MStatus = (String) data.get("history12MStatus");
                         if (!Utility.isNull(history12MStatus)) {
                             history12MStatus = history12MStatus.toLowerCase();
-                            if (!history12MStatus.equals("normal") && 
-                                !history12MStatus.equals("closed") && 
-                                !history12MStatus.equals("reject") && 
+                            if (!history12MStatus.equals("normal") &&
+                                !history12MStatus.equals("closed") &&
+                                !history12MStatus.equals("reject") &&
                                 !history12MStatus.equals("no information")) {
-                                log.error("[DoCheckCBCSalaryAdvance] Customer CBC status is invalid: {}", history12MStatus);
+                                log.error("[DoCheckCBCSalaryAdvance] Customer CBC debt status is invalid: {}", history12MStatus);
                                 result = new SimpleResult("Customer has bad debt (CBC)", false, ResponseCode.TRANSACTION_FAIL.getCode());
                             }
                         }
+
+                    } else {
+                        // 011 = Expired | 015 = No report | other → PASS
+                        log.info("[DoCheckCBCSalaryAdvance] CBC statusCode: {} — Pass (no blocking)", statusCode);
                     }
                 }
             } else {

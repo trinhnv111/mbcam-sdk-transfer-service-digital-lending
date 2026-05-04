@@ -2,18 +2,21 @@ package com.mbc.mobileapp.api;
 
 import com.mbc.common.api.ApiBase;
 import com.mbc.common.il.base.ErrorInfo;
+import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.microservice.base.TokenBean;
+import com.mbc.common.util.Utility;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.core.ParameterizedTypeReference;
-import com.mbc.common.il.base.ExecuteT24Output;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,24 +39,27 @@ public class ApiCBC extends ApiBase {
 
     private TokenBean cbcTokenBean;
 
-    private synchronized String getCbcToken(boolean forceRefresh) {
+
+    /**
+     * Lấy CBC Keycloak token.
+     * Dùng buildHeader() từ ApiBase để set đúng clientMessageId + info-log
+     * cho RestApiClientLogInterceptor.
+     */
+    private synchronized String getCbcToken(boolean forceRefresh, String custId, String requestId) {
         if (cbcTokenBean != null && !forceRefresh) {
             return cbcTokenBean.getAccessToken();
         }
         try {
-            HttpHeaders headers = new HttpHeaders();
+            String tokenMsgId = Utility.getUUID();
+            // Dùng custId + requestId thật từ user session để interceptor log đúng context
+            HttpHeaders headers = buildHeader(custId, requestId, tokenMsgId);
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            String tokenMsgId = com.mbc.common.util.Utility.getUUID();
-            List<String> infoLog = new java.util.ArrayList<>();
-            infoLog.add("SYSTEM");
-            infoLog.add(com.mbc.common.util.Utility.getUUID());
-            infoLog.add(tokenMsgId);
-            headers.put("info-log", infoLog);
-            headers.set("clientMessageId", tokenMsgId);  // phải match info-log[2] để logToDBRequest lookup được
-            MultiValueMap<String, String> map= new LinkedMultiValueMap<>();
+
+            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
             map.add("client_id", cbcClientId);
             map.add("client_secret", cbcClientSecret);
             map.add("grant_type", "client_credentials");
+
             HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
             cbcTokenBean = restTemplate.postForObject(tokenUrl, entity, TokenBean.class);
             return cbcTokenBean.getAccessToken();
@@ -63,39 +69,48 @@ public class ApiCBC extends ApiBase {
         }
     }
 
-    public ExecuteT24Output<Map<String, Object>> getCbcData(String clientMessageId, String clientUserId, String requestBy, String appCode, List<String> idNumbers) {
+    /**
+     * Gọi API get-cbc-data v2 từ CBC Portal.
+     *
+     * @param clientMessageId - ID giao dịch sinh ra từ client
+     * @param clientUserId    - ID user thực hiện call API
+     * @param requestBy       - User thực hiện tra cứu
+     * @param appCode         - Đầu kênh (BPM, CAMID, MOBILEAPP)
+     * @param idNumbers       - List ID number của KH
+     */
+    public ExecuteT24Output<Map<String, Object>> getCbcData(String clientMessageId, String clientUserId,
+                                                            String requestBy, String appCode, List<String> idNumbers) {
         return callApi(clientMessageId, clientUserId, requestBy, appCode, idNumbers, false);
     }
 
-    private ExecuteT24Output<Map<String, Object>> callApi(String clientMessageId, String clientUserId, String requestBy, String appCode, List<String> idNumbers, boolean isRetry) {
+    private ExecuteT24Output<Map<String, Object>> callApi(String clientMessageId, String clientUserId,
+                                                          String requestBy, String appCode,
+                                                          List<String> idNumbers, boolean isRetry) {
         try {
-            String token = getCbcToken(isRetry);
+            String custId = clientUserId != null ? clientUserId : "SYSTEM";
+            String requestId = Utility.getUUID();
+            String token = getCbcToken(isRetry, custId, requestId);
             if (token == null) return null;
 
-            HttpHeaders headers = new HttpHeaders();
+            String messageId = (clientMessageId != null) ? clientMessageId : Utility.getUUID();
+
+            // Dùng buildHeader chuẩn từ ApiBase — set đúng clientMessageId + info-log cho interceptor
+            HttpHeaders headers = buildHeader(custId, requestId, messageId);
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(token);
-
-            String msgId = (clientMessageId != null) ? clientMessageId : com.mbc.common.util.Utility.getUUID();
-            headers.set("clientMessageId", msgId);
-            headers.set("clientUserId", clientUserId);
-
-            List<String> infoLog = new java.util.ArrayList<>();
-            infoLog.add(clientUserId != null ? clientUserId : "SYSTEM");
-            infoLog.add(com.mbc.common.util.Utility.getUUID());
-            infoLog.add(msgId);  // phải match với clientMessageId header ở trên
-            headers.put("info-log", infoLog);
+            // ClientUserId header theo spec CBC API (clientMessageId đã được buildHeader set)
+            headers.set("ClientUserId", clientUserId);
 
             Map<String, Object> body = new HashMap<>();
             body.put("requestBy", requestBy);
             body.put("appCode", appCode);
             body.put("idNumber", idNumbers);
 
-            URI uri = new URI(cbcApiUrl);
+            HttpEntity<Object> request = new HttpEntity<>(body, headers);
             ResponseEntity<ExecuteT24Output<Map<String, Object>>> response = restTemplate.exchange(
-                    uri,
+                    cbcApiUrl,
                     HttpMethod.POST,
-                    new HttpEntity<>(body, headers),
+                    request,
                     new ParameterizedTypeReference<ExecuteT24Output<Map<String, Object>>>() {}
             );
 
@@ -108,12 +123,14 @@ public class ApiCBC extends ApiBase {
             if (output != null) mappingErrorCode(output);
             return output;
 
-        } catch (Exception e) {
-            log.error("[ApiCBC] Exception calling getCbcData: ", e);
-            if (e instanceof HttpClientErrorException.Unauthorized && !isRetry) {
+        } catch (HttpClientErrorException.Unauthorized e) {
+            if (!isRetry) {
                 log.info("[ApiCBC] Token expired (exception), retrying...");
                 return callApi(clientMessageId, clientUserId, requestBy, appCode, idNumbers, true);
             }
+            log.error("[ApiCBC] Unauthorized after retry: ", e);
+        } catch (Exception e) {
+            log.error("[ApiCBC] Exception calling getCbcData: ", e);
         }
         return null;
     }
