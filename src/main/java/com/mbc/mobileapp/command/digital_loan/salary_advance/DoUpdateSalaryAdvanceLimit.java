@@ -72,6 +72,12 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 tempRecord.setAddressProvince(req.getCurrentAddressProvince());
                 tempRecord.setAddressDistrict(req.getCurrentAddressDistrict());
                 tempRecord.setAddressWard(req.getCurrentAddressWard());
+
+                tempRecord.setPlaceOfBirth(req.getPlaceOfBirth());
+                tempRecord.setPlaceOfBirthProvince(req.getPlaceOfBirthProvince());
+                tempRecord.setPlaceOfBirthDistrict(req.getPlaceOfBirthDistrict());
+                tempRecord.setPlaceOfBirthWard(req.getPlaceOfBirthWard());
+
                 tempRecord.setEmail(req.getEmail());
                 
                 if (!Utility.isNull(req.getEmploymentStartDate())) {

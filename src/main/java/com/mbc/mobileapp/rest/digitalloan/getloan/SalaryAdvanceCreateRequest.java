@@ -13,6 +13,9 @@ public class SalaryAdvanceCreateRequest extends BaseRequest {
     private String employmentStartDate; // YYYYMMDD
     private String maritalStatus;
     private String placeOfBirth;
+    private String placeOfBirthProvince;
+    private String placeOfBirthDistrict;
+    private String placeOfBirthWard;
     
     // Address fields (Tỉnh/Huyện/Xã)
     private String currentAddressProvince;
