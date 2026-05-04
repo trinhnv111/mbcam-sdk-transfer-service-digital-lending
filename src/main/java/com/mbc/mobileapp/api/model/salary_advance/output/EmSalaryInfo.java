@@ -1,5 +1,6 @@
 package com.mbc.mobileapp.api.model.salary_advance.output;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EmSalaryInfo {
     private Integer walletAgeDays;
     private Integer kycLevel;                  // 0 = non-eKYC, 1 = fully eKYC

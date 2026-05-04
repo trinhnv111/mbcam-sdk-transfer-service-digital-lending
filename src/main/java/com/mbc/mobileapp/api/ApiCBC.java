@@ -43,6 +43,13 @@ public class ApiCBC extends ApiBase {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            String tokenMsgId = com.mbc.common.util.Utility.getUUID();
+            List<String> infoLog = new java.util.ArrayList<>();
+            infoLog.add("SYSTEM");
+            infoLog.add(com.mbc.common.util.Utility.getUUID());
+            infoLog.add(tokenMsgId);
+            headers.put("info-log", infoLog);
+            headers.set("clientMessageId", tokenMsgId);  // phải match info-log[2] để logToDBRequest lookup được
             MultiValueMap<String, String> map= new LinkedMultiValueMap<>();
             map.add("client_id", cbcClientId);
             map.add("client_secret", cbcClientSecret);
@@ -68,8 +75,16 @@ public class ApiCBC extends ApiBase {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(token);
-            headers.set("clientMessageId", clientMessageId);
+
+            String msgId = (clientMessageId != null) ? clientMessageId : com.mbc.common.util.Utility.getUUID();
+            headers.set("clientMessageId", msgId);
             headers.set("clientUserId", clientUserId);
+
+            List<String> infoLog = new java.util.ArrayList<>();
+            infoLog.add(clientUserId != null ? clientUserId : "SYSTEM");
+            infoLog.add(com.mbc.common.util.Utility.getUUID());
+            infoLog.add(msgId);  // phải match với clientMessageId header ở trên
+            headers.put("info-log", infoLog);
 
             Map<String, Object> body = new HashMap<>();
             body.put("requestBy", requestBy);

@@ -36,7 +36,7 @@ public class DoGetPromoCode implements Command {
     @Override
     public boolean execute(Context cntxt) throws Exception {
         ProcessContext context = (ProcessContext) cntxt;
-        Validator.Result result = Result.OK;
+        Result result = Result.OK;
         String requestId = context.getRequest().getRequestId();
         CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
         CommonServiceResponse response = (CommonServiceResponse) context.getResponse();

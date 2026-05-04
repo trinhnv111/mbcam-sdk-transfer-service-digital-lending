@@ -22,6 +22,7 @@ import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Optional;
 
@@ -53,11 +54,11 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
             Optional<ComTrans> comTransOpt = comTransRepo.findById(req.getTransId());
             if (comTransOpt.isPresent()) {
                 ComTrans comTrans = comTransOpt.get();
-                comTrans.setStatus(Constant.COM_STATUS_SUCCESS);
+                comTrans.setStatus(Constant.STATUS_SUCCESS);
                 comTransRepo.saveAndFlush(comTrans);
 
                 ComTransProcess comTransProcess = new ComTransProcess();
-                comTransProcess.setStatus(Constant.COM_STATUS_SUCCESS);
+                comTransProcess.setStatus(Constant.STATUS_SUCCESS);
                 comTransProcess.setTransId(comTrans.getId());
                 comTransProcess.setSrvcCd(comTrans.getSrvcCd());
                 comTransProcessRepo.saveAndFlush(comTransProcess);
@@ -72,6 +73,12 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 tempRecord.setAddressProvince(req.getCurrentAddressProvince());
                 tempRecord.setAddressDistrict(req.getCurrentAddressDistrict());
                 tempRecord.setAddressWard(req.getCurrentAddressWard());
+
+                tempRecord.setPlaceOfBirth(req.getPlaceOfBirth());
+                tempRecord.setPlaceOfBirthProvince(req.getPlaceOfBirthProvince());
+                tempRecord.setPlaceOfBirthDistrict(req.getPlaceOfBirthDistrict());
+                tempRecord.setPlaceOfBirthWard(req.getPlaceOfBirthWard());
+
                 tempRecord.setEmail(req.getEmail());
                 
                 if (!Utility.isNull(req.getEmploymentStartDate())) {
@@ -81,11 +88,11 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 }
 
                 tempRecord.setStep(STEP_CREATE_LOAN);
-                tempRecord.setStatus(Constant.COM_STATUS_SUCCESS);
+                tempRecord.setStatus(Constant.STATUS_SUCCESS);
 
                 if (limitAmount != null) {
-                    tempRecord.setLimitAmount(limitAmount);
-                    tempRecord.setApproveLimit(limitAmount);
+//                    tempRecord.setLimitAmount(limitAmount);
+                    tempRecord.setApproveLimit(BigDecimal.valueOf(limitAmount));
                 }
                 tempRecord.setCurrency(currency);
 

@@ -7,9 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class GetSaLimitRequest extends BaseRequest {
-    private String hostCifId; // lấy từ ss
+//    private String hostCifId; // lấy từ ss
 }

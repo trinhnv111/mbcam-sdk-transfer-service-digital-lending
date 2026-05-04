@@ -45,7 +45,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
             String clientUserId = custInfo.getUserId();
             String requestBy = cbcRequestBy;
             String appCode = cbcAppCode;
-            String idNumber = custInfo.getIdTypNo(); // Or getting from other source if necessary
+            String idNumber = custInfo.getIdTypNo();
 
             if (Utility.isNull(idNumber)) {
                 log.error("[DoCheckCBCSalaryAdvance] idNumber is null");
@@ -79,7 +79,6 @@ public class DoCheckCBCSalaryAdvance implements Command {
                 }
             } else {
                 log.warn("[DoCheckCBCSalaryAdvance] Failed to get CBC data or status is not 200");
-                // Tùy nghiệp vụ có chặn không nếu không call được CBC. Tạm thời coi như lỗi hệ thống
                 result = new SimpleResult("Failed to verify CBC", false, ResponseCode.TRANSACTION_FAIL.getCode());
             }
 

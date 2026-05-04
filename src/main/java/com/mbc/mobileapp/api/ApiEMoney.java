@@ -1,5 +1,7 @@
 package com.mbc.mobileapp.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mbc.common.api.CallApiGee;
 import com.mbc.common.util.AppLog;
@@ -75,33 +77,48 @@ public class ApiEMoney extends CallApiGee {
 
             if (response == null) {
                 AppLog.error("[API-EMONEY] customer/info null response - requestId:" + requestId, null);
-                return null;
+                return new ExcuteEmoney<>(504, "TIMEOUT", "Apigee response is null", null);
             }
 
             String errorCode = response.getErrorCode();
-            if (errorCode != null && !errorCode.isEmpty()) {
+            if (errorCode != null && !errorCode.isEmpty() && !"00".equals(errorCode) && !"0".equals(errorCode)) {
                 AppLog.error("[API-EMONEY] customer/info Apigee error - requestId:" + requestId
                         + ", errorCode:" + errorCode
                         + ", errorDesc:" + response.getErrorDesc(), null);
-                return null;
+                return new ExcuteEmoney<>(500, errorCode, String.valueOf(response.getErrorDesc()), null);
+            }
+            // Apigee wraps eMoney response inside response.data:
+            // response.data = { "status":0, "code":"MSG_SUCCESS", "message":"Success",
+            //                   "data": { salaryInfo:{...}, customerInfo:{...} } }
+            JsonNode outerData = response.getData();
+            if (outerData == null) {
+                AppLog.error("[API-EMONEY] customer/info outer data null - requestId:" + requestId, null);
+                return new ExcuteEmoney<>(500, "DATA_NULL", "Apigee outer data is null", null);
             }
 
-            EmCustInfoData data = response.getData() != null
-                    ? objectMapper.convertValue(response.getData(), EmCustInfoData.class)
-                    : null;
+            // Parse the eMoney wrapper layer: {status, code, message, data}
+            ExcuteEmoney<JsonNode> emoneyWrapper = objectMapper.convertValue(
+                    outerData, new TypeReference<ExcuteEmoney<JsonNode>>() {});
 
-            String statusStr = response.getStatus();
-            Integer status = statusStr != null ? Integer.parseInt(statusStr) : null;
+            Integer status = emoneyWrapper.getStatus();
+            String code = emoneyWrapper.getCode();
+            String message = emoneyWrapper.getMessage();
 
             AppLog.info("[API-EMONEY] customer/info response - requestId:" + requestId
-                    + ", status:" + statusStr
-                    + ", code:" + response.getCode());
+                    + ", status:" + status
+                    + ", code:" + code);
 
-            return new ExcuteEmoney<EmCustInfoData>(status, response.getCode(), response.getMessage(), data);
+            // Parse the actual EmCustInfoData from inner data
+            EmCustInfoData data = null;
+            if (emoneyWrapper.getData() != null) {
+                data = objectMapper.convertValue(emoneyWrapper.getData(), EmCustInfoData.class);
+            }
+
+            return new ExcuteEmoney<>(status, code, message, data);
 
         } catch (Exception e) {
             AppLog.error("[API-EMONEY] customer/info Exception - requestId:" + requestId + " - " + e.getMessage(), e);
-            return null;
+            return new ExcuteEmoney<>(500, "EXCEPTION", e.getMessage(), null);
         }
     }
 }

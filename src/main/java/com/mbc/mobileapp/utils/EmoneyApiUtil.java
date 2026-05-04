@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Component
 public class EmoneyApiUtil {
 
-    @Value("${emoney.digital-lending.public-key-path:pubic_key.pem}")
+    @Value("${emoney.digital-lending.public-key-path}")
     private String publicKeyPath;
 
     private PublicKey rsaPublicKey;
@@ -40,6 +40,20 @@ public class EmoneyApiUtil {
             log.info("[EmoneyApiUtil] RSA public key loaded OK from: {}", publicKeyPath);
         }
     }
+
+    public enum Padding {
+        RSA("RSA"),
+        OAEP("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING"),
+        PKCS1("RSA/ECB/PKCS1Padding");
+
+        final String algorithm;
+
+        Padding(String algorithm) {
+            this.algorithm = algorithm;
+        }
+    }
+
+    private static final Padding DEFAULT = Padding.RSA;
 
     /**
      * RSA(msisdn|idNumber) cho eMoney API customer/info
@@ -55,7 +69,7 @@ public class EmoneyApiUtil {
             throw new RuntimeException("[EmoneyApiUtil] rsaPublicKey is null, cannot encrypt. Kiểm tra file: " + publicKeyPath);
         }
         try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING");
+            Cipher cipher = Cipher.getInstance(DEFAULT.algorithm);
             cipher.init(Cipher.ENCRYPT_MODE, rsaPublicKey);
             byte[] encrypted = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
@@ -79,25 +93,28 @@ public class EmoneyApiUtil {
                 keyContent = reader.lines().collect(Collectors.joining("\n"));
             }
 
-            keyContent = keyContent
-                    .replace("-----BEGIN PUBLIC KEY-----", "")
-                    .replace("-----END PUBLIC KEY-----", "")
-                    .replaceAll("\\s+", "");
-
-            if (keyContent.isEmpty()) {
-                log.error("[EmoneyApiUtil] Public key content empty after stripping PEM headers: {}", path);
-                return null;
-            }
-
-            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PublicKey key = keyFactory.generatePublic(keySpec);
-            log.info("[EmoneyApiUtil] Loaded RSA public key successfully from: {}", path);
-            return key;
+            return parsePublicKey(keyContent);
         } catch (Exception e) {
             log.error("[EmoneyApiUtil] Failed to load public key from: '{}' — {}", path, e.getMessage(), e);
             return null;
         }
+    }
+
+    public static PublicKey parsePublicKey(String base64) throws Exception {
+        String clean = cleanBase64(base64, true);
+        byte[] bytes = Base64.getDecoder().decode(clean);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
+        return KeyFactory.getInstance("RSA").generatePublic(spec);
+    }
+
+    private static String cleanBase64(String base64, boolean isPublic) {
+        return base64
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replace("-----END PRIVATE KEY-----", "")
+                .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+                .replace("-----END RSA PRIVATE KEY-----", "")
+                .replaceAll("\\s+", "");
     }
 }

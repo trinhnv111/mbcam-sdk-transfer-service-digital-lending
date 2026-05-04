@@ -74,6 +74,8 @@ public class DoGetCustInfoFromEM implements Command {
                 msisdn = custInfo.getPhoneNo();
             }
 
+            msisdn = toMsisdn855(msisdn);
+
             log.info("[SA INIT - GET CUST FROM EM] Start - requestId:{}, cifId:{}, msisdn:{}",
                     request.getRequestId(), custInfo.getHostCifId(), msisdn);
 
@@ -134,6 +136,24 @@ public class DoGetCustInfoFromEM implements Command {
 
         processContext.setResult(result);
         return !result.isOk();
+    }
+
+    public static String toMsisdn855(String msisdn) {
+        if (msisdn == null || msisdn.isEmpty()) {
+            return null;
+        }
+
+        msisdn = msisdn.trim();
+
+        if (msisdn.startsWith("855")) {
+            return msisdn;
+        }
+
+        if (msisdn.startsWith("0")) {
+            return "855" + msisdn.substring(1);
+        }
+
+        return "855" + msisdn;
     }
 
 }

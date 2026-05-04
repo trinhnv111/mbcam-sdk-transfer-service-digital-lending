@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CustInfoOutput {
 
-    /** ID giao dịch (ẩn — FE dùng để gửi OTP và gọi Create) */
+    /** ID giao dịch  */
     private String transId;
 
     /** Fullname */
