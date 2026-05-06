@@ -15,17 +15,17 @@ import org.springframework.stereotype.Service;
 public class DoMapSalaryAdvanceOTP implements Command {
     @Override
     public boolean execute(Context cntxt) throws Exception {
-        ProcessContext context = (ProcessContext) cntxt;
-        CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
-        SalaryAdvanceCreateRequest createRequest = request.getSalaryAdvanceCreateRequest();
-        
-        TokenOtp otp = new TokenOtp();
-        otp.setOtpValue(createRequest.getOtp());
-        otp.setAuthMethod(TransactionAuthMethod.AUTH_METHOD_SMS); 
-        otp.setOtpType("SMS"); 
-        
-        context.putVar(Constant.KeyVar.OTP, otp);
-        context.setResult(Validator.Result.OK);
+//        ProcessContext context = (ProcessContext) cntxt;
+//        CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
+//        SalaryAdvanceCreateRequest createRequest = request.getSalaryAdvanceCreateRequest();
+//
+//        TokenOtp otp = new TokenOtp();
+////        otp.setOtpValue(createRequest.getOtp());
+//        otp.setAuthMethod(TransactionAuthMethod.AUTH_METHOD_SMS);
+//        otp.setOtpType("SMS");
+//
+//        context.putVar(Constant.KeyVar.OTP, otp);
+//        context.setResult(Validator.Result.OK);
         return false;
     }
 }

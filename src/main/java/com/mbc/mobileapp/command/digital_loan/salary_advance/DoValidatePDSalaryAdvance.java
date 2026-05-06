@@ -14,34 +14,35 @@ import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class DoValidatePDSalaryAdvance implements Command {
 
+    private static final String ERROR_MSG = "PD service is currently unavailable. Please contact MBCambodia for support.";
+
     @Override
     public boolean execute(Context ctx) throws Exception {
         ProcessContext context = (ProcessContext) ctx;
-        Validator.Result result = Validator.Result.OK;
         CommonServiceResponse response = (CommonServiceResponse) context.getResponse();
-        
+        Validator.Result result = Validator.Result.OK;
+
         try {
             MsLoanGetPdOutput pdOutput = response.getPdOutput();
-            if (pdOutput != null && !CollectionUtils.isEmpty(pdOutput.getPdLdList())) {
-                List<PdData> pdList = pdOutput.getPdLdList();
-                for (PdData pd : pdList) {
-                    double prAmt = parseAmount(pd.getPrAmt());
-                    double inAmt = parseAmount(pd.getInAmt());
-                    double peAmt = parseAmount(pd.getPeAmt());
-                    double psAmt = parseAmount(pd.getPsAmt());
 
-                    if (prAmt > 0 || inAmt > 0 || peAmt > 0 || psAmt > 0) {
-                        log.error("[DoValidatePDSalaryAdvance] Customer has bad debt in PD: {}. prAmt={}, inAmt={}, peAmt={}, psAmt={}", 
-                                pd.getPdId(), prAmt, inAmt, peAmt, psAmt);
-                        result = new SimpleResult("Customer has bad debt (PD)", false, ResponseCode.TRANSACTION_FAIL.getCode());
-                        break;
-                    }
+            if (pdOutput != null && !CollectionUtils.isEmpty(pdOutput.getPdLdList())) {
+                // Tìm kiếm record đầu tiên vi phạm điều kiện PD
+                Optional<PdData> badDebtRecord = pdOutput.getPdLdList().stream()
+                        .filter(this::hasBadDebt)
+                        .findFirst();
+
+                if (badDebtRecord.isPresent()) {
+                    PdData pd = badDebtRecord.get();
+                    log.error("[DoValidatePDSalaryAdvance] Customer has bad debt in PD: {}. prAmt={}, inAmt={}, peAmt={}",
+                            pd.getPdId(), pd.getPrAmt(), pd.getInAmt(), pd.getPeAmt());
+
+                    result = new SimpleResult(ERROR_MSG, false, ResponseCode.TRANSACTION_FAIL.getCode());
                 }
             }
         } catch (Exception e) {
@@ -50,7 +51,19 @@ public class DoValidatePDSalaryAdvance implements Command {
         }
 
         context.setResult(result);
+
         return !result.isOk();
+    }
+
+    /**
+     * check prAmt, inAmt, peAmt
+     */
+    private boolean hasBadDebt(PdData pd) {
+        double prAmt = parseAmount(pd.getPrAmt());
+        double inAmt = parseAmount(pd.getInAmt());
+        double peAmt = parseAmount(pd.getPeAmt());
+
+        return prAmt > 0 || inAmt > 0 || peAmt > 0;
     }
 
     private double parseAmount(String amtStr) {
@@ -60,6 +73,7 @@ public class DoValidatePDSalaryAdvance implements Command {
         try {
             return Double.parseDouble(amtStr);
         } catch (NumberFormatException e) {
+            log.warn("[DoValidatePDSalaryAdvance] Invalid amount format: {}", amtStr);
             return 0;
         }
     }

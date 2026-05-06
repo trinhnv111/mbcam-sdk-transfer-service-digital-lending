@@ -61,7 +61,7 @@ public class DoChecAMLSalaryAdvance implements Command {
                         .customerType("INDIVIDUAL")
                         .dateOfBirth(emCustInfo.getDateOfBirth())
                         .documentNumber(emCustInfo.getIdNumber())
-                        .gender(mapGender(emCustInfo.getGender())) // "M"→"MALE", "F"→"FEMALE"
+                        .gender(mapGender(emCustInfo.getGender()))   // "M"→"MALE", "F"→"FEMALE"
                         .nationality(emCustInfo.getNationality())
                         .requestedChannel(Constant.CHANNEL_MOBILE)
                         .requestedBusiness("CUSTOMER_ONBOARD")
@@ -109,7 +109,7 @@ public class DoChecAMLSalaryAdvance implements Command {
                     return !result.isOk();
                 }
 
-                // return true;
+//                return true;
             }
 
         } catch (Exception e) {
@@ -128,10 +128,8 @@ public class DoChecAMLSalaryAdvance implements Command {
      * eMoney returns "M"/"F", AML API requires "MALE"/"FEMALE"
      */
     private String mapGender(String g) {
-        if ("M".equalsIgnoreCase(g))
-            return "MALE";
-        if ("F".equalsIgnoreCase(g))
-            return "FEMALE";
+        if ("M".equalsIgnoreCase(g)) return "MALE";
+        if ("F".equalsIgnoreCase(g)) return "FEMALE";
         return g;
     }
 }

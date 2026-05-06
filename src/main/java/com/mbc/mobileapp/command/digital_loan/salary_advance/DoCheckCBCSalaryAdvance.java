@@ -14,10 +14,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -43,8 +45,6 @@ public class DoCheckCBCSalaryAdvance implements Command {
         try {
             String clientMessageId = request.getRefNo();
             String clientUserId = custInfo.getUserId();
-            String requestBy = cbcRequestBy;
-            String appCode = cbcAppCode;
             String idNumber = custInfo.getIdTypNo();
 
             if (Utility.isNull(idNumber)) {
@@ -54,46 +54,69 @@ public class DoCheckCBCSalaryAdvance implements Command {
                 return !result.isOk();
             }
 
-            ExecuteT24Output<Map<String, Object>> cbcResponse = apiCBC.getCbcData(clientMessageId, clientUserId, requestBy, appCode, Collections.singletonList(idNumber));
+            ExecuteT24Output<List<Map<String, Object>>> cbcResponse = apiCBC.getCbcData(
+                    clientMessageId, clientUserId, cbcRequestBy, cbcAppCode,
+                    Collections.singletonList(idNumber));
 
-            if (cbcResponse != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(cbcResponse.getStatus())) {
-                Map<String, Object> data = cbcResponse.getData();
-                if (data != null) {
-                    String statusCode = (String) data.get("statusCode");
-                    String statusDesc = (String) data.get("statusDesc");
-                    log.info("[DoCheckCBCSalaryAdvance] CBC statusCode: {}, statusDesc: {}", statusCode, statusDesc);
-
-                    if ("012".equals(statusCode) || "013".equals(statusCode) || "014".equals(statusCode)) {
-                        // 012 = Error from CBC | 013 = Waiting approval | 014 = Declined → FAIL
-                        log.error("[DoCheckCBCSalaryAdvance] CBC Report status invalid. statusCode: {}", statusCode);
-                        result = new SimpleResult("CBC Check Failed - " + statusDesc, false, ResponseCode.TRANSACTION_FAIL.getCode());
-
-                    } else if ("000".equals(statusCode)) {
-                        // 000 = Success (có bản tin Effective) → check history12MStatus
-                        String history12MStatus = (String) data.get("history12MStatus");
-                        if (!Utility.isNull(history12MStatus)) {
-                            history12MStatus = history12MStatus.toLowerCase();
-                            if (!history12MStatus.equals("normal") &&
-                                !history12MStatus.equals("closed") &&
-                                !history12MStatus.equals("reject") &&
-                                !history12MStatus.equals("no information")) {
-                                log.error("[DoCheckCBCSalaryAdvance] Customer CBC debt status is invalid: {}", history12MStatus);
-                                result = new SimpleResult("Customer has bad debt (CBC)", false, ResponseCode.TRANSACTION_FAIL.getCode());
-                            }
-                        }
-
-                    } else {
-                        // 011 = Expired | 015 = No report | other → PASS
-                        log.info("[DoCheckCBCSalaryAdvance] CBC statusCode: {} — Pass (no blocking)", statusCode);
-                    }
-                }
-            } else {
-                log.warn("[DoCheckCBCSalaryAdvance] Failed to get CBC data or status is not 200");
+            if (cbcResponse == null || !Constant.CALL_MICROSERVICE_SUCCESS.equals(cbcResponse.getStatus())) {
+                log.warn("[DoCheckCBCSalaryAdvance] CBC call failed or null response - requestId:{}", request.getRequestId());
                 result = new SimpleResult("Failed to verify CBC", false, ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return !result.isOk();
+            }
+
+            Map<String, Object> data = CollectionUtils.isEmpty(cbcResponse.getData())
+                    ? null
+                    : cbcResponse.getData().get(0);
+
+            String statusCode = data == null ? null : (String) data.get("statusCode");
+            String statusDesc = data == null ? null : (String) data.get("statusDesc");
+
+            String historyOneYear = data == null ? null : (String) data.get("historyOneYear");
+
+            log.info("[DoCheckCBCSalaryAdvance] CBC result - requestId:{}, statusCode:{}, statusDesc:{}, historyOneYear:{}",
+                    request.getRequestId(), statusCode, statusDesc, historyOneYear);
+
+            /**
+             * TH3: historyOneYear = null
+             * → Tra CBC thất bại / không có thông tin → End luồng, yêu cầu KH thực hiện lại
+             */
+
+            if (Utility.isNull(historyOneYear)) {
+                log.error("[DoCheckCBCSalaryAdvance] TH3: historyOneYear is null - CBC has no data - requestId:{}",
+                        request.getRequestId());
+                result = new SimpleResult(
+                        "CBC request failed or timeout. Please contact MBCambodia for support.",
+                        false, ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return false;
+            }
+
+            String history = historyOneYear.toLowerCase().trim();
+
+            /**
+             * TH2: historyOneYear = "normal" | "closed" | "reject" | "no information"
+             * → KH không có nợ xấu → PASS, tiếp tục sang tính limit
+             */
+            if ("normal".equals(history) || "closed".equals(history)
+                    || "reject".equals(history) || "no information".equals(history)) {
+                log.info("[DoCheckCBCSalaryAdvance] TH2: PASS - historyOneYear={} - requestId:{}",
+                        historyOneYear, request.getRequestId());
+                // result stays OK → chain continues
+            } else {
+                /**
+                 * TH1: historyOneYear != normal/closed/reject/no information
+                 * → KH có nhóm nợ quá hạn trong 12 tháng → BLOCK
+                 */
+                log.error("[DoCheckCBCSalaryAdvance] TH1: BLOCK - historyOneYear={} - requestId:{}",
+                        historyOneYear, request.getRequestId());
+                result = new SimpleResult(
+                        "We are unable to process your request at this time. Please contact MBCambodia for support.",
+                        false, ResponseCode.TRANSACTION_FAIL.getCode());
             }
 
         } catch (Exception e) {
-            log.error("[DoCheckCBCSalaryAdvance] Exception: ", e);
+            log.error("[DoCheckCBCSalaryAdvance] Exception - requestId:{}", request.getRequestId(), e);
             result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
         }
 

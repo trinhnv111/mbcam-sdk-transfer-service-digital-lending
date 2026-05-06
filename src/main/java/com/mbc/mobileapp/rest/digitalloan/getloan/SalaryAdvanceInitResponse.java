@@ -10,6 +10,5 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SalaryAdvanceInitResponse extends BaseResponse {
-    private String transId;
-    private CustInfoOutput custInfo;
+    private SalaryAdvanceInitData data;
 }

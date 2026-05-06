@@ -20,33 +20,55 @@ public class DoValidateSalaryAdvanceCreate implements Command {
     public boolean execute(Context ctx) throws Exception {
         ProcessContext context = (ProcessContext) ctx;
         Validator.Result result = Validator.Result.OK;
+
         CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
-        SalaryAdvanceCreateRequest createRequest = request.getSalaryAdvanceCreateRequest();
+        SalaryAdvanceCreateRequest req = request.getSalaryAdvanceCreateRequest();
 
-        if (createRequest == null) {
+        if (req == null) {
             log.error("[DoValidateSalaryAdvanceCreate] Request body is empty");
-            result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
+            result = new SimpleResult(
+                    ResponseCode.INVALID_INPUT.getDesc(),
+                    false,
+                    ResponseCode.INVALID_INPUT.getCode()
+            );
             context.setResult(result);
-            return !result.isOk();
+            return true;
         }
 
-        if (Utility.isNull(createRequest.getTransId())) {
-            log.error("[DoValidateSalaryAdvanceCreate] transId is null or empty");
-            result = new SimpleResult("transId is required", false, ResponseCode.INVALID_INPUT.getCode());
+        // REQUIRED fields (email + employmentStartDate excluded)
+        if (Utility.isNull(req.getTransId())
+                || Utility.isNull(req.getMaritalStatus())
+                || Utility.isNull(req.getPlaceOfBirth())
+                || Utility.isNull(req.getPlaceOfBirthProvince())
+                || Utility.isNull(req.getPlaceOfBirthDistrict())
+                || Utility.isNull(req.getPlaceOfBirthWard())
+                || Utility.isNull(req.getCurrentAddressProvince())
+                || Utility.isNull(req.getCurrentAddressDistrict())
+                || Utility.isNull(req.getCurrentAddressWard())) {
+
+            log.error("[DoValidateSalaryAdvanceCreate] Missing required fields");
+            result = new SimpleResult(
+                    "Missing required fields",
+                    false,
+                    ResponseCode.INVALID_INPUT.getCode()
+            );
             context.setResult(result);
-            return !result.isOk();
+            return true;
         }
 
-        if (!Utility.isNull(createRequest.getEmail())) {
-            if (createRequest.getEmail().contains(" ")) {
-                log.error("[DoValidateSalaryAdvanceCreate] Email contains whitespace");
-                result = new SimpleResult("Invalid email format", false, ResponseCode.INVALID_INPUT.getCode());
-                context.setResult(result);
-                return !result.isOk();
-            }
+        // Optional email validation (only if provided)
+        if (!Utility.isNull(req.getEmail()) && req.getEmail().contains(" ")) {
+            log.error("[DoValidateSalaryAdvanceCreate] Email contains whitespace");
+            result = new SimpleResult(
+                    "Invalid email format",
+                    false,
+                    ResponseCode.INVALID_INPUT.getCode()
+            );
+            context.setResult(result);
+            return true;
         }
 
         context.setResult(result);
-        return !result.isOk();
+        return false;
     }
 }

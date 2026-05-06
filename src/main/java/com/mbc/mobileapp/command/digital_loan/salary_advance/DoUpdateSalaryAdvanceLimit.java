@@ -44,12 +44,10 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
         Validator.Result result = Validator.Result.OK;
         CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
         SalaryAdvanceCreateRequest req = request.getSalaryAdvanceCreateRequest();
-        
+
         try {
             AppLog.info("[SA CREATE] Update limit record - requestId: " + request.getRequestId());
 
-            Double limitAmount = (Double) context.get("sa_limit");
-            String currency = (String) context.get("sa_currency");
 
             Optional<ComTrans> comTransOpt = comTransRepo.findById(req.getTransId());
             if (comTransOpt.isPresent()) {
@@ -80,7 +78,7 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 tempRecord.setPlaceOfBirthWard(req.getPlaceOfBirthWard());
 
                 tempRecord.setEmail(req.getEmail());
-                
+
                 if (!Utility.isNull(req.getEmploymentStartDate())) {
                     try {
                         tempRecord.setEmploymentStartDate(sdf.parse(req.getEmploymentStartDate()));
@@ -90,11 +88,30 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 tempRecord.setStep(STEP_CREATE_LOAN);
                 tempRecord.setStatus(Constant.STATUS_SUCCESS);
 
-                if (limitAmount != null) {
-//                    tempRecord.setLimitAmount(limitAmount);
-                    tempRecord.setApproveLimit(BigDecimal.valueOf(limitAmount));
+                // Limit từ MS Loan
+                Object saLimit = context.get("sa_limit");
+                if (saLimit instanceof BigDecimal) {
+                    tempRecord.setLoanLimit((BigDecimal) saLimit);
+                    tempRecord.setApproveLimit((BigDecimal) saLimit);
+                } else if (saLimit instanceof Double) {
+                    tempRecord.setLoanLimit(BigDecimal.valueOf((Double) saLimit));
+                    tempRecord.setApproveLimit(BigDecimal.valueOf((Double) saLimit));
                 }
-                tempRecord.setCurrency(currency);
+
+                String saLimitCurrency = (String) context.get("sa_currency");
+                if (!Utility.isNull(saLimitCurrency)) {
+                    tempRecord.setCurrency(saLimitCurrency);
+                }
+
+                // Ngày hiệu lực / hết hạn limit từ MS Loan
+                String limitValueDate = (String) context.get("sa_limit_value_date");
+                String limitEndDate = (String) context.get("sa_limit_end_date");
+                if (!Utility.isNull(limitValueDate)) {
+                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
+                }
+                if (!Utility.isNull(limitEndDate)) {
+                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
+                }
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);
                 AppLog.info("[SA CREATE] Update limit record SUCCESS - id: " + tempRecord.getId());

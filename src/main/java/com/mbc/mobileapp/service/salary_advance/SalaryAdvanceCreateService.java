@@ -16,8 +16,7 @@ public class SalaryAdvanceCreateService extends ChainBase {
     private final DoCheckRefNo doCheckRefNo;
     private final CheckCustomerState checkCustomerState;
     private final DoCheckSrvc doCheckSrvc;
-//    private final DoMapSalaryAdvanceOTP doMapSalaryAdvanceOTP;
-//    private final ValidateOTP validateOTP;
+    private final ValidateOTP validateOTP;
     private final DoValidateSalaryAdvanceCreate doValidateSalaryAdvanceCreate;
     private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
     private final DoGetPd doGetPd;
@@ -31,9 +30,8 @@ public class SalaryAdvanceCreateService extends ChainBase {
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
 
-        // Map and Verify OTP
-//        addCommand(doMapSalaryAdvanceOTP);
-//        addCommand(validateOTP);
+        //Verify OTP
+        addCommand(validateOTP);
 
         // Validate Input
         addCommand(doValidateSalaryAdvanceCreate);

@@ -7,7 +7,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SalaryAdvanceCreateResponse extends BaseResponse {
-    private String transId;
-    private Double limitAmount;
-    private String currency;
+     private SalaryAdvanceCreateData data;
 }

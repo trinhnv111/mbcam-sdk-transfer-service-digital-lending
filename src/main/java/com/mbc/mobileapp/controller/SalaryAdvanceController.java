@@ -74,8 +74,8 @@ public class SalaryAdvanceController extends BaseController {
             if (custInfo != null) {
 //                param.setHostCifId(custInfo.getHostCifId());
                 String hostCif = custInfo.getHostCifId();
-                if(Utility.isNull(hostCif)){
-                    result = new SimpleResult("CUSTOMER HOSTCIF is invalid",false,ResponseCode.INVALID_INPUT.getCode());
+                if (Utility.isNull(hostCif)) {
+                    result = new SimpleResult("CUSTOMER HOSTCIF is invalid", false, ResponseCode.INVALID_INPUT.getCode());
                 }
                 // param common
                 commonServiceRequest = (CommonServiceRequest) setBase(commonServiceRequest, param);
@@ -176,7 +176,7 @@ public class SalaryAdvanceController extends BaseController {
                 request.setPartnerId(principal.getName());
                 request.setSalaryAdvanceCreateRequest(param);
                 request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
-                resp = salaryAdvanceService.create(request, cust);
+                resp = salaryAdvanceService.create(request, cust, param.getTokenOTP());
             }
             resp.setRefNo(param.getRefNo());
         }

@@ -6,7 +6,6 @@ import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.microservice.base.TokenBean;
 import com.mbc.common.util.Utility;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -14,9 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,12 +75,12 @@ public class ApiCBC extends ApiBase {
      * @param appCode         - Đầu kênh (BPM, CAMID, MOBILEAPP)
      * @param idNumbers       - List ID number của KH
      */
-    public ExecuteT24Output<Map<String, Object>> getCbcData(String clientMessageId, String clientUserId,
+    public ExecuteT24Output<List<Map<String, Object>>> getCbcData(String clientMessageId, String clientUserId,
                                                             String requestBy, String appCode, List<String> idNumbers) {
         return callApi(clientMessageId, clientUserId, requestBy, appCode, idNumbers, false);
     }
 
-    private ExecuteT24Output<Map<String, Object>> callApi(String clientMessageId, String clientUserId,
+    private ExecuteT24Output<List<Map<String, Object>>> callApi(String clientMessageId, String clientUserId,
                                                           String requestBy, String appCode,
                                                           List<String> idNumbers, boolean isRetry) {
         try {
@@ -107,19 +104,21 @@ public class ApiCBC extends ApiBase {
             body.put("idNumber", idNumbers);
 
             HttpEntity<Object> request = new HttpEntity<>(body, headers);
-            ResponseEntity<ExecuteT24Output<Map<String, Object>>> response = restTemplate.exchange(
-                    cbcApiUrl,
-                    HttpMethod.POST,
-                    request,
-                    new ParameterizedTypeReference<ExecuteT24Output<Map<String, Object>>>() {}
-            );
+
+            ResponseEntity<ExecuteT24Output<List<Map<String, Object>>>> response =
+                    restTemplate.exchange(
+                            cbcApiUrl,
+                            HttpMethod.POST,
+                            request,
+                            new ParameterizedTypeReference<ExecuteT24Output<List<Map<String, Object>>>>() {}
+                    );
 
             if (response.getStatusCode() == HttpStatus.UNAUTHORIZED && !isRetry) {
                 log.info("[ApiCBC] Token expired, retrying...");
                 return callApi(clientMessageId, clientUserId, requestBy, appCode, idNumbers, true);
             }
 
-            ExecuteT24Output<Map<String, Object>> output = response.getBody();
+            ExecuteT24Output<List<Map<String, Object>>> output = response.getBody();
             if (output != null) mappingErrorCode(output);
             return output;
 
