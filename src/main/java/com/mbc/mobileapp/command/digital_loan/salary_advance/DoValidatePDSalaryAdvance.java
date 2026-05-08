@@ -20,7 +20,7 @@ import java.util.Optional;
 @Service
 public class DoValidatePDSalaryAdvance implements Command {
 
-    private static final String ERROR_MSG = "PD service is currently unavailable. Please contact MBCambodia for support.";
+
 
     @Override
     public boolean execute(Context ctx) throws Exception {
@@ -42,7 +42,7 @@ public class DoValidatePDSalaryAdvance implements Command {
                     log.error("[DoValidatePDSalaryAdvance] Customer has bad debt in PD: {}. prAmt={}, inAmt={}, peAmt={}",
                             pd.getPdId(), pd.getPrAmt(), pd.getInAmt(), pd.getPeAmt());
 
-                    result = new SimpleResult(ERROR_MSG, false, ResponseCode.TRANSACTION_FAIL.getCode());
+                    result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                 }
             }
         } catch (Exception e) {

@@ -14,6 +14,7 @@ import com.mbc.common.util.Constant;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,15 +25,14 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class DoUpdateSalaryAdvanceLimit implements Command {
-
-    private static final String STEP_CREATE_LOAN = "CREATE_LOAN";
-    private static final String DATE_FORMAT = "yyyy-MM-dd";
 
     private final ComTransDtlLmtRepository comTransDtlLmtRepo;
     private final ComTransRepo comTransRepo;
@@ -65,7 +65,7 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
             Optional<ComTransDtlLmt> tempRecordOpt = comTransDtlLmtRepo.findById(req.getTransId());
             if (tempRecordOpt.isPresent()) {
                 ComTransDtlLmt tempRecord = tempRecordOpt.get();
-                SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+                SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);
 
                 tempRecord.setMaritalStatus(req.getMaritalStatus());
                 tempRecord.setAddressProvince(req.getCurrentAddressProvince());
@@ -82,10 +82,11 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 if (!Utility.isNull(req.getEmploymentStartDate())) {
                     try {
                         tempRecord.setEmploymentStartDate(sdf.parse(req.getEmploymentStartDate()));
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                    }
                 }
 
-                tempRecord.setStep(STEP_CREATE_LOAN);
+                tempRecord.setStep(SalaryAdvanceConstant.STEP_CREATE_LOAN);
                 tempRecord.setStatus(Constant.STATUS_SUCCESS);
 
                 // Limit từ MS Loan
@@ -103,21 +104,30 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                     tempRecord.setCurrency(saLimitCurrency);
                 }
 
-                // Ngày hiệu lực / hết hạn limit từ MS Loan
-                String limitValueDate = (String) context.get("sa_limit_value_date");
-                String limitEndDate = (String) context.get("sa_limit_end_date");
-                if (!Utility.isNull(limitValueDate)) {
-                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
-                }
-                if (!Utility.isNull(limitEndDate)) {
-                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
-                }
+//                // Ngày hiệu lực / hết hạn limit từ MS Loan
+//                String limitValueDate = (String) context.get("sa_limit_value_date");
+//                String limitEndDate = (String) context.get("sa_limit_end_date");
+//                if (!Utility.isNull(limitValueDate)) {
+//                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
+//                }
+//                if (!Utility.isNull(limitEndDate)) {
+//                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
+//                }
+
+                // Ngày hiệu lực / hết hạn
+                Date nowDay = new Date();
+                tempRecord.setStartDate(nowDay);
+
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(nowDay);
+                cal.add(Calendar.DAY_OF_YEAR, 365);
+                tempRecord.setEndDate(cal.getTime());
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);
                 AppLog.info("[SA CREATE] Update limit record SUCCESS - id: " + tempRecord.getId());
             } else {
                 AppLog.error("[SA CREATE] transId not found in DB: " + req.getTransId());
-                result = new SimpleResult("transId not found", false, ResponseCode.INVALID_INPUT.getCode());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
             }
 
         } catch (Exception e) {

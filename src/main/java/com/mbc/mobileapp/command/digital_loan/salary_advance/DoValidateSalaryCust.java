@@ -9,6 +9,7 @@ import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ import java.util.Objects;
 /**
  * Command: Validate thông tin khách hàng từ eMoney
  * 1. Match National ID (session vs eMoney)
- * 2. Tuổi >= 18
+ * 2. Tuổi >= 18, 60
  * 3. Lương liên tục >= 6 tháng (từ salaryInfo.continuousSalary6Months)
  */
 @Service
@@ -32,8 +33,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class DoValidateSalaryCust implements Command {
 
-    private static final int MIN_AGE = 18;
-    private static final String DATE_FORMAT = "yyyy-MM-dd";
+
 
     @Override
     public boolean execute(Context context) throws Exception {
@@ -62,7 +62,7 @@ public class DoValidateSalaryCust implements Command {
 
             if (Utility.isNull(sessionIdNumber) || !sessionIdNumber.equals(emIdNumber)) {
                 log.error("[SA INIT - VALIDATE] ID mismatch: session={}, eMoney={}", sessionIdNumber, emIdNumber);
-                result = new SimpleResult("idNumber mismatch", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
+                result = new SimpleResult(ResponseCode.SA_ID_MISMATCH.getDesc(), false, ResponseCode.SA_ID_MISMATCH.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -71,12 +71,12 @@ public class DoValidateSalaryCust implements Command {
             String dobStr = emCustInfo.getDateOfBirth();
             if (Utility.isNull(dobStr)) {
                 log.error("[SA INIT - VALIDATE] DOB is null");
-                result = new SimpleResult("DOB is null", false, ResponseCode.TRANSACTION_FAIL.getDesc());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 processContext.setResult(result);
 
             }
 
-            SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+            SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);
             Date dob = sdf.parse(dobStr);
             Calendar dobCal = Calendar.getInstance();
             dobCal.setTime(dob);
@@ -85,9 +85,9 @@ public class DoValidateSalaryCust implements Command {
             if (now.get(Calendar.DAY_OF_YEAR) < dobCal.get(Calendar.DAY_OF_YEAR)) {
                 age--;
             }
-            if (age < MIN_AGE) {
+            if (age <= SalaryAdvanceConstant.MIN_AGE || age >= SalaryAdvanceConstant.MAX_AGE) {
                 log.error("[SA INIT - VALIDATE] Age invalid: {}", age);
-                result = new SimpleResult("AGE_NOT_VALID", false, ResponseCode.IDTYPNO_NOT_VALID.getDesc());
+                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                 processContext.setResult(result);
                 return true;
 
@@ -101,7 +101,7 @@ public class DoValidateSalaryCust implements Command {
                 log.error("[SA INIT - VALIDATE] Salary invalid: continuousSalary6Months={}, salary3mAvgUSD={}",
                         emSalaryInfo != null ? emSalaryInfo.getContinuousSalary6Months() : null,
                         emSalaryInfo != null ? emSalaryInfo.getSalary3mAvgUSD() : null);
-                result = new SimpleResult("SALARY_INVALID", false, ResponseCode.TRANSACTION_FAIL.getDesc());
+                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -112,8 +112,8 @@ public class DoValidateSalaryCust implements Command {
         } catch (Exception e) {
             log.error("[SA INIT - VALIDATE] Exception - requestId:{}, desc:{}",
                     request.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                    ResponseCode.TRANSACTION_FAIL.getDesc());
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                    ResponseCode.TRANSACTION_FAIL.getCode());
         }
 
         processContext.setResult(result);

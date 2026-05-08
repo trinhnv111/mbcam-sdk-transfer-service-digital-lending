@@ -1,42 +1,42 @@
-package com.mbc.mobileapp.swagger;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
-@Configuration
-@EnableSwagger2
-public class SwaggerConfig implements WebMvcConfigurer {
-
-
-    @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(getApiInfo())
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.mbc.mobileapp.controller"))
-                .paths(PathSelectors.any())
-                .build();
-    }
-
-    private ApiInfo getApiInfo() {
-        Contact contact = new Contact("mbbank.com.vn", "https://mbbank.com.vn", "haidt4@mbbank.com.vn");
-        return new ApiInfoBuilder()
-                .title("MBC REST API")
-                .description("MBC REST API: APP MOBILE")
-                .version("1.0.0")
-                .license("MBBANK License Apache 2.0")
-                .licenseUrl("http://www.apache.org/licenses/LICENSE-2.0")
-                .contact(contact)
-                .build();
-    }
-}
+package com.mbc.mobileapp.swagger;//package com.mbc.mobileapp.swagger;
+//
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+//
+//import springfox.documentation.builders.ApiInfoBuilder;
+//import springfox.documentation.builders.PathSelectors;
+//import springfox.documentation.builders.RequestHandlerSelectors;
+//import springfox.documentation.service.ApiInfo;
+//import springfox.documentation.service.Contact;
+//import springfox.documentation.spi.DocumentationType;
+//import springfox.documentation.spring.web.plugins.Docket;
+//import springfox.documentation.swagger2.annotations.EnableSwagger2;
+//
+//@Configuration
+//@EnableSwagger2
+//public class SwaggerConfig implements WebMvcConfigurer {
+//
+//
+//    @Bean
+//    public Docket api() {
+//        return new Docket(DocumentationType.SWAGGER_2)
+//                .apiInfo(getApiInfo())
+//                .select()
+//                .apis(RequestHandlerSelectors.basePackage("com.mbc.mobileapp.controller"))
+//                .paths(PathSelectors.any())
+//                .build();
+//    }
+//
+//    private ApiInfo getApiInfo() {
+//        Contact contact = new Contact("mbbank.com.vn", "https://mbbank.com.vn", "haidt4@mbbank.com.vn");
+//        return new ApiInfoBuilder()
+//                .title("MBC REST API")
+//                .description("MBC REST API: APP MOBILE")
+//                .version("1.0.0")
+//                .license("MBBANK License Apache 2.0")
+//                .licenseUrl("http://www.apache.org/licenses/LICENSE-2.0")
+//                .contact(contact)
+//                .build();
+//    }
+//}

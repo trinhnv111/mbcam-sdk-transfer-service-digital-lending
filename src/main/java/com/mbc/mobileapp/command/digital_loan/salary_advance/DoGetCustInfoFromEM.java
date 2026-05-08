@@ -11,6 +11,7 @@ import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.ApiEMoney;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoData;
 import com.mbc.mobileapp.api.model.salary_advance.output.ExcuteEmoney;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +26,6 @@ import java.util.Objects;
  * POST /{merchantCode}/digital-lending/customer/info
  *
  * Input: RSA encrypt (msisdn|idNumber)
- * Output context:
- *   "emCustomerInfo" → EmCustomerInfo (Nhóm 1)
- *   "emSalaryInfo"   → EmSalaryInfo   (Nhóm 2)
  */
 @Service
 @RequiredArgsConstructor
@@ -87,8 +85,8 @@ public class DoGetCustInfoFromEM implements Command {
             if (Objects.isNull(emResponse)) {
                 log.error("[SA INIT - GET CUST FROM EM] Response null (timeout) - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getCode(), false,
-                        ResponseCode.REQUEST_TIMEOUT.getDesc());
+                result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getDesc(), false,
+                        ResponseCode.REQUEST_TIMEOUT.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -114,8 +112,8 @@ public class DoGetCustInfoFromEM implements Command {
             if (Objects.isNull(data) || Objects.isNull(data.getCustomerInfo())) {
                 log.error("[SA INIT - GET CUST FROM EM] Data/customerInfo is null - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                        ResponseCode.TRANSACTION_FAIL.getDesc());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
                 processContext.setResult(result);
 //                return true;
             }
@@ -130,8 +128,8 @@ public class DoGetCustInfoFromEM implements Command {
         } catch (Exception e) {
             log.error("[SA INIT - GET CUST FROM EM] Exception - requestId:{}, desc:{}",
                     request.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                    ResponseCode.TRANSACTION_FAIL.getDesc());
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                    ResponseCode.TRANSACTION_FAIL.getCode());
         }
 
         processContext.setResult(result);
@@ -139,21 +137,25 @@ public class DoGetCustInfoFromEM implements Command {
     }
 
     public static String toMsisdn855(String msisdn) {
-        if (msisdn == null || msisdn.isEmpty()) {
+        if (msisdn == null) {
             return null;
         }
 
         msisdn = msisdn.trim();
 
-        if (msisdn.startsWith("855")) {
+        if (msisdn.isEmpty()) {
+            return null;
+        }
+
+        if (msisdn.startsWith(SalaryAdvanceConstant.MSISDN855)) {
             return msisdn;
         }
 
         if (msisdn.startsWith("0")) {
-            return "855" + msisdn.substring(1);
+            return SalaryAdvanceConstant.MSISDN855 + msisdn.substring(1);
         }
 
-        return "855" + msisdn;
+        return SalaryAdvanceConstant.MSISDN855 + msisdn;
     }
 
 }

@@ -49,7 +49,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
 
             if (Utility.isNull(idNumber)) {
                 log.error("[DoCheckCBCSalaryAdvance] idNumber is null");
-                result = new SimpleResult("idNumber is required for CBC check", false, ResponseCode.INVALID_INPUT.getCode());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 context.setResult(result);
                 return !result.isOk();
             }
@@ -60,7 +60,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
 
             if (cbcResponse == null || !Constant.CALL_MICROSERVICE_SUCCESS.equals(cbcResponse.getStatus())) {
                 log.warn("[DoCheckCBCSalaryAdvance] CBC call failed or null response - requestId:{}", request.getRequestId());
-                result = new SimpleResult("Failed to verify CBC", false, ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 context.setResult(result);
                 return !result.isOk();
             }
@@ -85,11 +85,9 @@ public class DoCheckCBCSalaryAdvance implements Command {
             if (Utility.isNull(historyOneYear)) {
                 log.error("[DoCheckCBCSalaryAdvance] TH3: historyOneYear is null - CBC has no data - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(
-                        "CBC request failed or timeout. Please contact MBCambodia for support.",
-                        false, ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                 context.setResult(result);
-                return false;
+                return false; // end luồng
             }
 
             String history = historyOneYear.toLowerCase().trim();
@@ -110,9 +108,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
                  */
                 log.error("[DoCheckCBCSalaryAdvance] TH1: BLOCK - historyOneYear={} - requestId:{}",
                         historyOneYear, request.getRequestId());
-                result = new SimpleResult(
-                        "We are unable to process your request at this time. Please contact MBCambodia for support.",
-                        false, ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
             }
 
         } catch (Exception e) {

@@ -102,7 +102,7 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
                 String currency = (String) context.get("sa_currency");
 
                 SalaryAdvanceCreateData data = SalaryAdvanceCreateData.builder()
-                        .transId(transId)
+
                         .limitAmount(limitAmount)
                         .currency(currency)
                         .build();

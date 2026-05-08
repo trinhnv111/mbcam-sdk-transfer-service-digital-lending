@@ -18,6 +18,7 @@ import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustomerInfo;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,6 @@ import java.text.SimpleDateFormat;
 @Slf4j
 @RequiredArgsConstructor
 public class DoInitSalaryAdvanceLimit implements Command {
-
-    private static final String LOAN_TYPE_SALARY_ADVANCE = "SALARY_ADVANCE";
-    private static final String STEP_INIT = "INIT";
-    private static final String DATE_FORMAT = "yyyy-MM-dd";
-
     private final ComTransDtlLmtRepository comTransDtlLmtRepo;
     private final ComTransRepo comTransRepo;
     private final ComTransProcessRepo comTransProcessRepo;
@@ -54,7 +50,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
             EmCustomerInfo emCustInfo = (EmCustomerInfo) context.get("emCustomerInfo");
             EmSalaryInfo emSalaryInfo = (EmSalaryInfo) context.get("emSalaryInfo");
             CustomerInfoT24 custT24 = (CustomerInfoT24) context.get("customerInfoMS");
-            SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
+            SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);
 
             // --- ComTrans (transaction header) ---
             ComTrans comTrans = new ComTrans();
@@ -83,7 +79,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
 
             // Thông tin KH
             if (custT24 != null) {
-                tempRecord.setFullName(custT24.getCustomerName().getFirstName()+custT24.getCustomerName().getLastName());
+                tempRecord.setFullName(custT24.getCustomerName().getEngName());
                 tempRecord.setGender(custT24.getGender());
                 tempRecord.setNationality(custT24.getNationality());
                 tempRecord.setOccupation(custT24.getOccupation());
@@ -113,8 +109,8 @@ public class DoInitSalaryAdvanceLimit implements Command {
 //                tempRecord.setMonthlyIncome(emSalaryInfo.getSalary3mAvgUSD());
             }
 
-            tempRecord.setLoanType(LOAN_TYPE_SALARY_ADVANCE);
-            tempRecord.setStep(STEP_INIT);
+            tempRecord.setLoanType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE);
+            tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);

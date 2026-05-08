@@ -18,8 +18,9 @@ public class SalaryAdvanceCreateService extends ChainBase {
     private final DoCheckSrvc doCheckSrvc;
     private final ValidateOTP validateOTP;
     private final DoValidateSalaryAdvanceCreate doValidateSalaryAdvanceCreate;
-    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
-    private final DoGetPd doGetPd;
+    private final DoCheckConcurrentCbcPdSalaryAdvance doCheckConcurrentCbcPdSalaryAdvance;
+//    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
+//    private final DoGetPd doGetPd;
     private final DoValidatePDSalaryAdvance doValidatePDSalaryAdvance;
     private final DoCalculateLimitSalaryAdvance doCalculateLimitSalaryAdvance;
     private final DoUpdateSalaryAdvanceLimit doUpdateSalaryAdvanceLimit;
@@ -30,23 +31,16 @@ public class SalaryAdvanceCreateService extends ChainBase {
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
 
-        //Verify OTP
         addCommand(validateOTP);
 
-        // Validate Input
         addCommand(doValidateSalaryAdvanceCreate);
 
-        // Check CBC
-        addCommand(doCheckCBCSalaryAdvance);
+        addCommand(doCheckConcurrentCbcPdSalaryAdvance);
 
-        // Check PD
-        addCommand(doGetPd);
         addCommand(doValidatePDSalaryAdvance);
 
-        // Calculate Limit
         addCommand(doCalculateLimitSalaryAdvance);
 
-        // Update Record and Limit
         addCommand(doUpdateSalaryAdvanceLimit);
     }
 }

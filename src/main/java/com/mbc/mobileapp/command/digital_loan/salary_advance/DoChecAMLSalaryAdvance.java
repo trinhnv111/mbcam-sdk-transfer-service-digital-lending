@@ -27,8 +27,6 @@ import java.util.Objects;
 
 /**
  * Command: Check AML — logic giống DoCustomerCheckAML
- * Dùng EmCustomerInfo (Nhóm 1) để build AML input
- * Tên KH = familyName + " " + firstName (vì englishName là Boolean)
  */
 @Service
 @Slf4j
@@ -84,8 +82,8 @@ public class DoChecAMLSalaryAdvance implements Command {
 
                         // TRUE_HIT → từ chối
                         if ("TRUE_HIT".equals(output.getData().getResult())) {
-                            result = new SimpleResult(ResponseCode.CUSTOMER_INFO_CHECK_AML_TRUE_HIT.getDesc(),
-                                    false, ResponseCode.CUSTOMER_INFO_CHECK_AML_TRUE_HIT.getCode());
+                            result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(),
+                                    false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                             processContext.setRequest(request);
                             processContext.setResult(result);
                             return !result.isOk();

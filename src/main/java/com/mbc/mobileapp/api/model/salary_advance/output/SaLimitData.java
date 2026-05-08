@@ -13,5 +13,6 @@ import java.math.BigDecimal;
 public class SaLimitData {
     private BigDecimal approveLimit;
     private BigDecimal usedLimit;
+    private BigDecimal remaining;
     private String currency;
 }

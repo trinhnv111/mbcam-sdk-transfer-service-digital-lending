@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class SalaryAdvanceCreateData {
-    private String transId;
+//    private String transId;
     private Double limitAmount;
     private String currency;
 }

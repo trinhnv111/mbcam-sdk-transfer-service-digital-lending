@@ -74,7 +74,7 @@ public class DoCalculateLimitSalaryAdvance implements Command {
 
             if (msResponse == null || msResponse.getData() == null) {
                 log.error("[SA CALCULATE LIMIT] MS Loan response is null - requestId: {}", request.getRequestId());
-                result = new SimpleResult("Failed to calculate limit", false, ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 context.setResult(result);
                 return !result.isOk();
             }
