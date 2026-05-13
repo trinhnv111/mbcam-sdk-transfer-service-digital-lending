@@ -62,7 +62,7 @@ public class DoCheckConcurrentCbcPdSalaryAdvance implements Command {
                 log.error("[DoCheckConcurrent] One of the commands failed. cbcFailed={}, pdFailed={}", cbcFailed, pdFailed);
 
                 if (context.getResult() == null || context.getResult().isOk()) {
-                    Validator.Result failResult = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
+                    Validator.Result failResult = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                     context.setResult(failResult);
                 }
                 return true; // Dừng chain

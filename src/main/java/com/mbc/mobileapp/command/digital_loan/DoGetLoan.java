@@ -11,6 +11,7 @@ import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.ApiMsLoan;
+import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import lombok.RequiredArgsConstructor;
@@ -38,14 +39,14 @@ public class DoGetLoan implements Command {
         String custId = custInfo.getId();
         ExecuteT24Output<DoGenT24DayNowOutput> T24DayNowOutput;
         try {
-            ExecuteT24Output<Object> executeT24Output = apiMsLoan.getLoan(custInfo.getHostCifId(), custId, request.getRequestId());
+            ExecuteT24Output<GetLoanOutput> executeT24Output = apiMsLoan.getLoan(custInfo.getHostCifId(), custId, request.getRequestId());
             if (Objects.isNull(executeT24Output)) {
                 //get loan timeout
                 log.info("[DoGetLoan] timeout");
                 result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getDesc(), false, ResponseCode.REQUEST_TIMEOUT.getCode());
             } else {
                 if (Constant.CALL_MICROSERVICE_SUCCESS.equals(executeT24Output.getStatus())) {
-                    Object getLoan = executeT24Output.getData();
+                    GetLoanOutput getLoan = executeT24Output.getData();
                     T24DayNowOutput = apiCustomer.genT24DayNow(custId, request.getRequestId());
                     if (Objects.isNull(T24DayNowOutput)) {
                         result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getDesc(), false, ResponseCode.REQUEST_TIMEOUT.getCode());

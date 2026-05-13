@@ -9,6 +9,7 @@ import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.services.il.nonsavingacct.AccountBase;
 import com.mbc.mobileapp.api.model.account.transaction.history.bakong.GetDetailTransactionHistoryOutput;
+import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanGetPdOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.PaymentHistoryOutPut;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceAddressOutput;
@@ -148,7 +149,7 @@ public class CommonServiceResponse extends Response {
     private PartnerSdkResponse partnerSdk;
 
     //DIGITAL LOAN
-    private Object loanOutput;
+    private GetLoanOutput loanOutput;
     private String t24DayNow;
     private MsLoanGetPdOutput pdOutput;
     private List<PaymentHistoryOutPut> paymentHistoryOutput;

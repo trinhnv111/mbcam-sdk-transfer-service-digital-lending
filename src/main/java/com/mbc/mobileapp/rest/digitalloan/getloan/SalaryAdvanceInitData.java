@@ -13,4 +13,6 @@ import lombok.NoArgsConstructor;
 public class SalaryAdvanceInitData {
     private String transId;
     private CustInfoOutput custInfo;
+    private boolean isDisabilities;
+
 }

@@ -52,14 +52,14 @@ public class DoGetCustInfroFromMSCust implements Command {
             } else {
                 String errorCode = Objects.nonNull(customerInfoT24) ? customerInfoT24.getStatus() : "null";
                 AppLog.error("[SA-INIT] Get customer info from ms customer fail - requestId: " + commonServiceRequest.getRequestId() + ", status: " + errorCode);
-                result = new SimpleResult("Get customer MS failed", false, ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult("Get customer MS failed", false, ResponseCode.SA_GENERAL_ERROR.getCode());
                 processContext.setResult(result);
                 return true;
             }
 
         } catch (Exception e) {
             AppLog.error("[SA-INIT] Get customer info from ms customer exception - requestId: " + commonServiceRequest.getRequestId(), e);
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
+            result = new SimpleResult(ResponseCode.SA_GENERAL_ERROR.getDesc(), false, ResponseCode.SA_GENERAL_ERROR.getCode());
             processContext.setResult(result);
             return true;
         }

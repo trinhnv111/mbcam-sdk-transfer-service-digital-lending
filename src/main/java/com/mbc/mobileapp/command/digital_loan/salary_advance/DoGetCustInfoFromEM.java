@@ -85,8 +85,8 @@ public class DoGetCustInfoFromEM implements Command {
             if (Objects.isNull(emResponse)) {
                 log.error("[SA INIT - GET CUST FROM EM] Response null (timeout) - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getDesc(), false,
-                        ResponseCode.REQUEST_TIMEOUT.getCode());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -97,12 +97,12 @@ public class DoGetCustInfoFromEM implements Command {
                         request.getRequestId(), emResponse.getStatus(),
                         emResponse.getCode(), emResponse.getMessage());
 
-                // Lookup trực tiếp — enum code = eMoney code
+
                 ResponseCode errorCode = ResponseCode.valueOfErrorCode(emResponse.getCode());
                 if (errorCode == null) {
-                    errorCode = ResponseCode.TRANSACTION_FAIL;
+                    errorCode = ResponseCode.SA_GENERAL_ERROR;
                 }
-                result = new SimpleResult(errorCode.getCode(), false, errorCode.getDesc());
+                result = new SimpleResult(errorCode.getDesc(), false, errorCode.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -112,10 +112,10 @@ public class DoGetCustInfoFromEM implements Command {
             if (Objects.isNull(data) || Objects.isNull(data.getCustomerInfo())) {
                 log.error("[SA INIT - GET CUST FROM EM] Data/customerInfo is null - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-                        ResponseCode.TRANSACTION_FAIL.getCode());
+                result = new SimpleResult(ResponseCode.SA_GENERAL_ERROR.getDesc(), false,
+                        ResponseCode.SA_GENERAL_ERROR.getCode());
                 processContext.setResult(result);
-//                return true;
+                return true;
             }
 
             // Put vào context
@@ -128,8 +128,8 @@ public class DoGetCustInfoFromEM implements Command {
         } catch (Exception e) {
             log.error("[SA INIT - GET CUST FROM EM] Exception - requestId:{}, desc:{}",
                     request.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-                    ResponseCode.TRANSACTION_FAIL.getCode());
+            result = new SimpleResult(ResponseCode.SA_GENERAL_ERROR.getDesc(), false,
+                    ResponseCode.SA_GENERAL_ERROR.getCode());
         }
 
         processContext.setResult(result);

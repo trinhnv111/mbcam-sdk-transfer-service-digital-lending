@@ -50,8 +50,8 @@ public class DoValidateSalaryCust implements Command {
 
             if (Objects.isNull(emCustInfo)) {
                 log.error("[SA INIT - VALIDATE] emCustomerInfo is null");
-                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                        ResponseCode.TRANSACTION_FAIL.getDesc());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
                 processContext.setResult(result);
                 return true;
             }
@@ -67,13 +67,13 @@ public class DoValidateSalaryCust implements Command {
                 return true;
             }
 
-            // 2. Check tuổi >= 18
+            // 2. Check 60  > =tuổi >= 18
             String dobStr = emCustInfo.getDateOfBirth();
             if (Utility.isNull(dobStr)) {
                 log.error("[SA INIT - VALIDATE] DOB is null");
                 result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 processContext.setResult(result);
-
+                return true;
             }
 
             SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);

@@ -42,7 +42,7 @@ public class DoValidatePDSalaryAdvance implements Command {
                     log.error("[DoValidatePDSalaryAdvance] Customer has bad debt in PD: {}. prAmt={}, inAmt={}, peAmt={}",
                             pd.getPdId(), pd.getPrAmt(), pd.getInAmt(), pd.getPeAmt());
 
-                    result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
+                    result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 }
             }
         } catch (Exception e) {

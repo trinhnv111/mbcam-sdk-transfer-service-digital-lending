@@ -3,10 +3,11 @@ package com.mbc.mobileapp.api;
 import com.mbc.common.api.CallMicroService;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.util.Utility;
+import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanGetPdOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.PaymentHistoryOutPut;
-import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanCalculateLimitRequest;
-import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanCalculateLimitResponse;
+import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanOfferLimitRequest;
+import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanOfferLimitResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -21,13 +22,8 @@ import java.util.List;
 @Slf4j
 public class ApiMsLoan extends CallMicroService {
 
-    @Value("${api.ms-loan.calculate-limit.url:}")
-    private String calculateLimitUrl;
-
-    @Value("${api.ms-loan.mock.enabled:true}")
-    private boolean mockEnabled;
-
-
+    @Value("${microservice.ms-loan.offer-limit:/loan/v1.0/offer-limit}")
+    private String offerLimitPath;
     public ApiMsLoan() {
     }
 
@@ -37,13 +33,13 @@ public class ApiMsLoan extends CallMicroService {
      * @param requestId
      * @return
      */
-    public ExecuteT24Output<Object> getLoan(String hostCifId, String custId, String requestId) {
+    public ExecuteT24Output<GetLoanOutput> getLoan(String hostCifId, String custId, String requestId) {
         String messageId = Utility.getUUID();
         HttpHeaders headers = buildHeader(custId, requestId, messageId);
         String url = getUrl("microservice.ms-loan.host") + getUrl("microservice.ms-loan.get-loan");
         UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(url).queryParam("customerCode", hostCifId);
-        ExecuteT24Output<Object> output = getForMicroService(uri.build().toUri(), headers, new ParameterizedTypeReference<ExecuteT24Output<Object>>() {
-        });
+        ExecuteT24Output<GetLoanOutput> output = getForMicroService(uri.build().toUri(), headers,
+                new ParameterizedTypeReference<ExecuteT24Output<GetLoanOutput>>() {});
         mappingErrorCode(output);
         return output;
     }
@@ -87,34 +83,30 @@ public class ApiMsLoan extends CallMicroService {
 
     /**
      * Gọi MS Loan API tính toán hạn mức.
-     * Nếu mock.enabled=true hoặc URL rỗng → trả mock response.
      */
-    public MsLoanCalculateLimitResponse calculateLimit(MsLoanCalculateLimitRequest request,
-                                                       String custId, String requestId) {
-        if (mockEnabled || Utility.isNull(calculateLimitUrl)) {
-            log.info("[ApiMsLoan] Mock mode — returning mock limit data for customerCode: {}",
-                    request.getCustomerCode());
-            return buildMockResponse(request.getCustomerCode());
-        }
-
+    public MsLoanOfferLimitResponse offerLimit(MsLoanOfferLimitRequest request,
+                                               String custId, String requestId) {
         try {
             String msgId = Utility.getUUID();
             HttpHeaders headers = buildHeader(custId, requestId, msgId);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<MsLoanCalculateLimitRequest> entity = new HttpEntity<>(request, headers);
+            String host = getUrl("microservice.ms-loan.host");
+            String path = getUrl("microservice.ms-loan.offer-limit");
+            if (Utility.isNull(path)) {
+                path = offerLimitPath;
+            }
+            String url = host + path;
 
-            log.info("[ApiMsLoan] Calling MS Loan calculate-limit - url: {}, customerCode: {}",
-                    calculateLimitUrl, request.getCustomerCode());
+            log.info("[ApiMsLoan] Calling MS Loan offer-limit - url: {}, customerCode: {}",
+                    url, request.getCustomerCode());
 
-            ResponseEntity<MsLoanCalculateLimitResponse> response = restTemplate.exchange(
-                    calculateLimitUrl,
-                    HttpMethod.POST,
-                    entity,
-                    MsLoanCalculateLimitResponse.class
+            MsLoanOfferLimitResponse body = postForMicroService(
+                    url,
+                    headers,
+                    request,
+                    new ParameterizedTypeReference<MsLoanOfferLimitResponse>() {}
             );
-
-            MsLoanCalculateLimitResponse body = response.getBody();
             log.info("[ApiMsLoan] MS Loan response - status: {}, limitAmount: {}",
                     body != null ? body.getStatus() : "null",
                     body != null && body.getData() != null ? body.getData().getLimitAmount() : "null");
@@ -122,32 +114,11 @@ public class ApiMsLoan extends CallMicroService {
             return body;
 
         } catch (Exception e) {
-            log.error("[ApiMsLoan] Exception calling MS Loan calculate-limit: ", e);
+            log.error("[ApiMsLoan] Exception calling MS Loan offer-limit: ", e);
             return null;
         }
     }
 
-    /**
-     * Mock response
-     */
-    private MsLoanCalculateLimitResponse buildMockResponse(String customerCode) {
-        java.time.LocalDate today = java.time.LocalDate.now();
-
-        MsLoanCalculateLimitResponse.LimitData limitData = MsLoanCalculateLimitResponse.LimitData.builder()
-                .customerCode(customerCode)
-                .limitAmount(new java.math.BigDecimal("750.00"))
-                .limitCurrency("USD")
-                .limitValueDate(today.toString())
-                .limitEndDate(today.plusMonths(3).toString())
-                .build();
-
-        return MsLoanCalculateLimitResponse.builder()
-                .status("200")
-                .error("Success")
-                .clientMessageId("MOCK-" + Utility.getUUID())
-                .data(limitData)
-                .build();
-    }
 
 
 }

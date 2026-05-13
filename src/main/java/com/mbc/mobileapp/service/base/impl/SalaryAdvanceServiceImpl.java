@@ -118,7 +118,7 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
 
 
     /**
-     * Build CustInfoOutput từ data eMoney + MS Customer+ session
+     * Build CustInfoOutput từ data eMoney + MS Customer
      * - fullName      : msCustomer
      * - idNumber       : msCustomer
      * - phoneNumber    : msCustomer

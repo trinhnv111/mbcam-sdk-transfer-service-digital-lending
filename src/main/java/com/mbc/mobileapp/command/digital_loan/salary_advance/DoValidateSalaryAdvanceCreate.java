@@ -39,6 +39,9 @@ public class DoValidateSalaryAdvanceCreate implements Command {
         if (Utility.isNull(req.getTransId())
                 || Utility.isNull(req.getMaritalStatus())
                 || Utility.isNull(req.getPlaceOfBirth())
+                || Utility.isNull(req.getPlaceOfBirthProvince())
+                || Utility.isNull(req.getPlaceOfBirthDistrict())
+                || Utility.isNull(req.getPlaceOfBirthWard())
                 || Utility.isNull(req.getCurrentAddressProvince())
                 || Utility.isNull(req.getCurrentAddressDistrict())
                 || Utility.isNull(req.getCurrentAddressWard())) {
@@ -47,23 +50,6 @@ public class DoValidateSalaryAdvanceCreate implements Command {
             result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
             context.setResult(result);
             return true;
-        }
-
-        // Validate PlaceOfBirth details only if PlaceOfBirth is Cambodia/Campuchia
-        String pob = req.getPlaceOfBirth() != null ? req.getPlaceOfBirth().toUpperCase() : "";
-        if (pob.contains("CAMBODIA") || pob.contains("CAMPUCHIA") || "KHM".equals(pob) || "KH".equals(pob)) {
-            if (Utility.isNull(req.getPlaceOfBirthProvince())
-                    || Utility.isNull(req.getPlaceOfBirthDistrict())
-                    || Utility.isNull(req.getPlaceOfBirthWard())) {
-                log.error("[DoValidateSalaryAdvanceCreate] Missing place of birth details for Cambodia");
-                result = new SimpleResult(
-                        "Missing required fields for place of birth",
-                        false,
-                        ResponseCode.INVALID_INPUT.getCode()
-                );
-                context.setResult(result);
-                return true;
-            }
         }
 
         // Optional email validation (only if provided)

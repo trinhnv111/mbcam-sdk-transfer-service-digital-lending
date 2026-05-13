@@ -18,36 +18,42 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MsLoanCalculateLimitRequest {
+public class MsLoanOfferLimitRequest {
 
-    /** Mã CIF của KH */
+    /**
+     * Mã CIF của KH
+     */
     private String customerCode;
 
-    /** Kênh gọi API — "SDK" */
+    /**
+     * Kênh gọi API — "SDK"
+     */
     private String channel;
 
-    /** Sản phẩm — "DIGITAL_LOAN" */
+    /**
+     * Sản phẩm — "DIGITAL_LOAN"
+     */
     private String product;
 
-    /** Sub sản phẩm — "SALARY_ADVANCE" */
+    /**
+     * Sub sản phẩm — "SALARY_ADVANCE"
+     */
     private String subProduct;
 
-    /** Đối tác — "EMONEY" */
+    /**
+     * Đối tác — "EMONEY"
+     */
     private String partnerCode;
 
-    /** Loại tiền hạn mức — "USD" */
+    /**
+     * Loại tiền hạn mức — "USD"
+     */
     private String limitCurrency;
 
-    /** Thông tin lương 3 tháng */
-    private List<SalaryMonth> salary;
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SalaryMonth {
-        private List<SalaryDetail> salaryDetail;
-    }
+    /**
+     * Thông tin lương 3 tháng
+     */
+    private List<SalaryDetail> salaryDetail;
 
     @Data
     @Builder
@@ -55,6 +61,5 @@ public class MsLoanCalculateLimitRequest {
     @AllArgsConstructor
     public static class SalaryDetail {
         private BigDecimal salaryAmount;
-        private String salaryCurrency;
     }
 }

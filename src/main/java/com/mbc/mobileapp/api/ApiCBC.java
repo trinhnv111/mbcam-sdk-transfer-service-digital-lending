@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +70,8 @@ public class ApiCBC extends ApiBase {
      *
      * @param clientMessageId - ID giao dịch sinh ra từ client
      * @param clientUserId    - ID user thực hiện call API
-     * @param requestBy       - User thực hiện tra cứu
-     * @param appCode         - Đầu kênh (BPM, CAMID, MOBILEAPP)
+     * @param requestBy       - SDKeM
+     * @param appCode         - Đầu kênh ( MOBILEAPP)
      * @param idNumbers       - List ID number của KH
      */
     public ExecuteT24Output<List<Map<String, Object>>> getCbcData(String clientMessageId, String clientUserId,
@@ -91,11 +90,9 @@ public class ApiCBC extends ApiBase {
 
             String messageId = (clientMessageId != null) ? clientMessageId : Utility.getUUID();
 
-            // Dùng buildHeader chuẩn từ ApiBase — set đúng clientMessageId + info-log cho interceptor
             HttpHeaders headers = buildHeader(custId, requestId, messageId);
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(token);
-            // ClientUserId header theo spec CBC API (clientMessageId đã được buildHeader set)
             headers.set("ClientUserId", clientUserId);
 
             Map<String, Object> body = new HashMap<>();

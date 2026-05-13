@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mbc.common.api.CallApiGee;
+import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.util.AppLog;
 import com.mbc.mobileapp.api.model.salary_advance.input.EmCustInfoInput;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoData;
@@ -86,6 +87,7 @@ public class ApiEMoney extends CallApiGee {
                         + ", errorCode:" + errorCode
                         + ", errorDesc:" + response.getErrorDesc(), null);
                 return new ExcuteEmoney<>(500, errorCode, String.valueOf(response.getErrorDesc()), null);
+//                return new ExcuteEmoney<>(500, errorCode,  ResponseCode.SA_NOT_ELIGIBLE.getDesc(), null);
             }
             // Apigee wraps eMoney response inside response.data:
             // response.data = { "status":0, "code":"MSG_SUCCESS", "message":"Success",

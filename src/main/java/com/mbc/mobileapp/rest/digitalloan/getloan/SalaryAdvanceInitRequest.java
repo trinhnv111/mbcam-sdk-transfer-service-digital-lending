@@ -7,5 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SalaryAdvanceInitRequest extends BaseRequest {
-//    private String idTypNo; national id
+    //    private String idTypNo; national id
+    private boolean disabilities;
 }

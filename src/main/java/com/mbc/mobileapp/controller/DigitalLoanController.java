@@ -57,27 +57,27 @@ public class DigitalLoanController extends BaseController {
      */
     @ApiOperation("Api get loan")
     @PostMapping("/get-ld")
-    public GetLoanResponse getLoan(@RequestBody @Valid DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
+    public GetLoanResponse getLoan(@RequestBody GetLoanRequest param, HttpServletRequest requestClient) {
         GetLoanResponse resp = new GetLoanResponse();
         Result result;
-        GetLoanRequest param;
-
-        if (dynKeyEnabled) {
-            DynamicKeyResponse<GetLoanRequest> dynResponse = dynDecryptData1(dynRequest, GetLoanRequest.class);
-            param = dynResponse.getData();
-
-            if (param == null) {
-                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
-                resp.setResult(result);
-            }
-        } else {
-            param = mapDataRequestBody(dynRequest.getDataEncrypt(), GetLoanRequest.class);
-            if (param == null) {
-                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
-                resp.setResult(result);
-            }
-        }
-        log.info("[SDK DIGITAL-LOAN GET Loan] input data: {}", JSON.stringify(param));
+//        GetLoanRequest param;
+//
+//        if (dynKeyEnabled) {
+//            DynamicKeyResponse<GetLoanRequest> dynResponse = dynDecryptData1(dynRequest, GetLoanRequest.class);
+//            param = dynResponse.getData();
+//
+//            if (param == null) {
+//                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
+//                resp.setResult(result);
+//            }
+//        } else {
+//            param = mapDataRequestBody(dynRequest.getDataEncrypt(), GetLoanRequest.class);
+//            if (param == null) {
+//                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
+//                resp.setResult(result);
+//            }
+//        }
+//        log.info("[SDK DIGITAL-LOAN GET Loan] input data: {}", JSON.stringify(param));
         // validation
         result = validate(param);
         if (!result.isOk()) {
@@ -91,7 +91,8 @@ public class DigitalLoanController extends BaseController {
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
                 request.setGetLoanRequest(param);
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_DIGITAL_LOAN);
+//                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_DIGITAL_LOAN);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = digitalLoanService.getLoan(request, cust);
             }
             resp.setRefNo(param.getRefNo());

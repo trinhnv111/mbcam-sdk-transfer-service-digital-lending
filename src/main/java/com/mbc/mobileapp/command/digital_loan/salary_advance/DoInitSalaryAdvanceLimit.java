@@ -104,7 +104,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
                 } catch (Exception e) {
                     AppLog.warning("[SA INIT] Cannot serialize salaryInfo: " + e.getMessage());
                 }
-                // Lưu riêng avg USD để tiện tính toán limit về sau
+                // Lưu riêng avg USD để tiện tính toán limit
 //                tempRecord.setMonthlySalaryAmountUsd(emSalaryInfo.getSalary3mAvgUSD());
 //                tempRecord.setMonthlyIncome(emSalaryInfo.getSalary3mAvgUSD());
             }
@@ -112,6 +112,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
             tempRecord.setLoanType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE);
             tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
+            tempRecord.setIsDisabilities(request.getSalaryAdvanceInitRequest().isDisabilities());
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
 
@@ -120,7 +121,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
 
         } catch (Exception e) {
             AppLog.error("[Exception Save SA Init Record] requestId: " + request.getRequestId() + " desc: ", e);
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
+            result = new SimpleResult(ResponseCode.SA_GENERAL_ERROR.getDesc(), false, ResponseCode.SA_GENERAL_ERROR.getCode());
         }
         context.setResult(result);
         return !result.isOk();

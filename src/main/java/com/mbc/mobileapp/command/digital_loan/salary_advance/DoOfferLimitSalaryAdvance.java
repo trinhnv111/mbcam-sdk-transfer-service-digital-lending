@@ -11,9 +11,9 @@ import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.ApiMsLoan;
-import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanCalculateLimitRequest;
+import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanOfferLimitRequest;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmSalaryInfo;
-import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanCalculateLimitResponse;
+import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanOfferLimitResponse;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +23,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Command tính toán hạn mức Salary Advance.
@@ -33,7 +32,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class DoCalculateLimitSalaryAdvance implements Command {
+public class DoOfferLimitSalaryAdvance implements Command {
 
     private final ApiMsLoan apiMsLoan;
     private final ComTransDtlLmtRepository comTransDtlLmtRepo;
@@ -66,20 +65,20 @@ public class DoCalculateLimitSalaryAdvance implements Command {
             }
 
             // Build request body cho MS Loan
-            MsLoanCalculateLimitRequest msRequest = buildMsLoanRequest(hostCifId, emSalaryInfo);
+            MsLoanOfferLimitRequest msRequest = buildMsLoanRequest(hostCifId, emSalaryInfo);
 
-            // Call MS Loan
-            MsLoanCalculateLimitResponse msResponse = apiMsLoan.calculateLimit(
+            // Call MS Loan offer-limit
+            MsLoanOfferLimitResponse msResponse = apiMsLoan.offerLimit(
                     msRequest, custInfo.getId(), request.getRequestId());
 
             if (msResponse == null || msResponse.getData() == null) {
-                log.error("[SA CALCULATE LIMIT] MS Loan response is null - requestId: {}", request.getRequestId());
+                log.error("[SA OFFER LIMIT] MS Loan response is null - requestId: {}", request.getRequestId());
                 result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
                 context.setResult(result);
                 return !result.isOk();
             }
 
-            MsLoanCalculateLimitResponse.LimitData limitData = msResponse.getData();
+            MsLoanOfferLimitResponse.LimitData limitData = msResponse.getData();
 
             // Đẩy kết quả vào context cho DoUpdateSalaryAdvanceLimit
             context.put("sa_limit", limitData.getLimitAmount());
@@ -101,52 +100,41 @@ public class DoCalculateLimitSalaryAdvance implements Command {
 
     /**
      * Build MS Loan request body từ hostCifId và EmSalaryInfo.
-     * salaryInfo chứa T1/T2/T3 lương USD+KHR → map thành 3 SalaryMonth.
+     * salaryInfo chứa T1/T2/T3 lương.
      */
-    private MsLoanCalculateLimitRequest buildMsLoanRequest(String hostCifId, EmSalaryInfo salary) {
-        List<MsLoanCalculateLimitRequest.SalaryMonth> salaryMonths = new ArrayList<>();
+    private MsLoanOfferLimitRequest buildMsLoanRequest(String hostCifId, EmSalaryInfo salary) {
+        List<MsLoanOfferLimitRequest.SalaryDetail> salaryDetails = new ArrayList<>();
 
         if (salary != null) {
             // Tháng 1 (T1)
-            salaryMonths.add(buildSalaryMonth(salary.getSalaryAmountT1USD(), salary.getSalaryAmountT1KHR()));
+            addSalaryDetail(salaryDetails, salary.getSalaryAmountT1USD() != null ? salary.getSalaryAmountT1USD() : salary.getSalaryAmountT1KHR()
+            );
+
             // Tháng 2 (T2)
-            salaryMonths.add(buildSalaryMonth(salary.getSalaryAmountT2USD(), salary.getSalaryAmountT2KHR()));
+            addSalaryDetail(salaryDetails, salary.getSalaryAmountT2USD() != null ? salary.getSalaryAmountT2USD() : salary.getSalaryAmountT2KHR()
+            );
+
             // Tháng 3 (T3)
-            salaryMonths.add(buildSalaryMonth(salary.getSalaryAmountT3USD(), salary.getSalaryAmountT3KHR()));
+            addSalaryDetail(salaryDetails, salary.getSalaryAmountT3USD() != null ? salary.getSalaryAmountT3USD() : salary.getSalaryAmountT3KHR()
+            );
         }
 
-        return MsLoanCalculateLimitRequest.builder()
+        return MsLoanOfferLimitRequest.builder()
                 .customerCode(hostCifId)
-                .channel("SDK")
+                .channel("SDK.RETAIL")
                 .product("DIGITAL_LOAN")
                 .subProduct("SALARY_ADVANCE")
                 .partnerCode("EMONEY")
                 .limitCurrency("USD")
-                .salary(salaryMonths)
+                .salaryDetail(salaryDetails)
                 .build();
     }
 
-    /**
-     *  SalaryMonth chứa detail USD + KHR
-     */
-    private MsLoanCalculateLimitRequest.SalaryMonth buildSalaryMonth(BigDecimal usd, BigDecimal khr) {
-        List<MsLoanCalculateLimitRequest.SalaryDetail> details = new ArrayList<>();
-
-        if (usd != null) {
-            details.add(MsLoanCalculateLimitRequest.SalaryDetail.builder()
-                    .salaryAmount(usd)
-                    .salaryCurrency("USD")
+    private void addSalaryDetail(List<MsLoanOfferLimitRequest.SalaryDetail> details, BigDecimal amount) {
+        if (amount != null) {
+            details.add(MsLoanOfferLimitRequest.SalaryDetail.builder()
+                    .salaryAmount(amount)
                     .build());
         }
-        if (khr != null) {
-            details.add(MsLoanCalculateLimitRequest.SalaryDetail.builder()
-                    .salaryAmount(khr)
-                    .salaryCurrency("KHR")
-                    .build());
-        }
-
-        return MsLoanCalculateLimitRequest.SalaryMonth.builder()
-                .salaryDetail(details)
-                .build();
     }
 }

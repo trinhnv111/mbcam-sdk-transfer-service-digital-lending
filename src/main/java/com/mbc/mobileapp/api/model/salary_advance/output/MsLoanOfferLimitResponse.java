@@ -1,6 +1,7 @@
 package com.mbc.mobileapp.api.model.salary_advance.output;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.mbc.common.api.models.ApiAuthenResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,16 +11,26 @@ import java.math.BigDecimal;
 
 /**
  * Response từ MS Loan API tính toán hạn mức.
+ *      "status": 200,
+ *     "soaErrorCode": "000",
+ *     "soaErrorDesc": "Success",
+ *     "path": "/loan/v1.0/offer-limit",
+ *     "clientMessageId": "7039146a-1fa4-4ee0-b220-067397e15c64",
+ *     "data": {
+ *
+ *     }
+ *
  */
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MsLoanCalculateLimitResponse {
+public class MsLoanOfferLimitResponse extends ApiAuthenResponse {
 
     private String status;
-    private String error;
+//    private String error;
     private String clientMessageId;
     private String path;
     private String soaErrorCode;
