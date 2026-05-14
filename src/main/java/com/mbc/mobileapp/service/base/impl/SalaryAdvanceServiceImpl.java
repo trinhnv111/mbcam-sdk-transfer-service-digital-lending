@@ -57,25 +57,37 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         ProcessContext context = loadContext(request, cust);
         SalaryAdvanceInitResponse response = new SalaryAdvanceInitResponse();
         Validator.Result result;
+
         try {
             salaryAdvanceInitService.execute(context);
             logService.execute(context);
+
             result = context.getResult();
             response.setResult(result);
+
             if (result.isOk()) {
                 EmCustomerInfo emCustInfo = (EmCustomerInfo) context.get("emCustomerInfo");
                 String transId = (String) context.get("transId");
 
+                // null  = chưa từng tạo → FE hiển thị màn hình chọn khuyết tật
+                // true/false = đã từng tạo → giá trị KH đã chọn lần trước
+                Boolean showDisabilities = (Boolean) context.get("showDisabilities");
+
                 CustInfoOutput custInfoOutput = buildCustInfoOutput(emCustInfo, cust);
-                response.setData(SalaryAdvanceInitData.builder()
-                        .transId(transId)
-                        .custInfo(custInfoOutput)
-                        .build());
+
+                SalaryAdvanceInitData initData = new SalaryAdvanceInitData();
+                initData.setTransId(transId);
+                initData.setCustInfo(custInfoOutput);
+                initData.setShowDisabilities(showDisabilities);
+
+                response.setData(initData);
             }
+
         } catch (Exception e) {
-            log.error(e.toString());
+            log.error("init salary advance error", e);
             context.setResult(Validator.Result.UNKNOWN);
         }
+
         return response;
     }
 

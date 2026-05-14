@@ -79,6 +79,10 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
 
                 tempRecord.setEmail(req.getEmail());
 
+                if (req.getDisabilities() != null) {
+                    tempRecord.setIsDisabilities(req.getDisabilities());
+                }
+
                 if (!Utility.isNull(req.getEmploymentStartDate())) {
                     try {
                         tempRecord.setEmploymentStartDate(sdf.parse(req.getEmploymentStartDate()));
@@ -121,7 +125,13 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(nowDay);
                 cal.add(Calendar.DAY_OF_YEAR, 365);
-                tempRecord.setEndDate(cal.getTime());
+                Date endDate = cal.getTime();
+                tempRecord.setEndDate(endDate);
+
+
+                SimpleDateFormat formatOut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                context.put("sa_start_date_out", formatOut.format(nowDay));
+                context.put("sa_end_date_out", formatOut.format(endDate));
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);
                 AppLog.info("[SA CREATE] Update limit record SUCCESS - id: " + tempRecord.getId());

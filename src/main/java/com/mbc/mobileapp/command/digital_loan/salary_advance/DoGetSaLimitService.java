@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 
 @Service
 @Slf4j
@@ -73,6 +74,13 @@ public class DoGetSaLimitService implements Command {
             limitData.setUsedLimit(usedLimit);
             limitData.setRemaining(approveLimit.subtract(usedLimit));
             limitData.setCurrency(comTransDtlLmt.getCurrency());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (comTransDtlLmt.getStartDate() != null) {
+                limitData.setStartDate(sdf.format(comTransDtlLmt.getStartDate()));
+            }
+            if (comTransDtlLmt.getEndDate() != null) {
+                limitData.setEndDate(sdf.format(comTransDtlLmt.getEndDate()));
+            }
         } else {
             // Chưa đăng ký hạn mức → trả về 0
             limitData.setApproveLimit(BigDecimal.ZERO);

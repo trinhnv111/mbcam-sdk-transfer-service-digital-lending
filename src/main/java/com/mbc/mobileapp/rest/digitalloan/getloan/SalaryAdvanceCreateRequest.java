@@ -25,4 +25,6 @@ public class SalaryAdvanceCreateRequest extends BaseRequest {
     private String currentAddressProvince;
     private String currentAddressDistrict;
     private String currentAddressWard;
+
+    private Boolean disabilities;
 }

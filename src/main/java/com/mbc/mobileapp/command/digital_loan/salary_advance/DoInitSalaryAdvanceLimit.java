@@ -112,9 +112,24 @@ public class DoInitSalaryAdvanceLimit implements Command {
             tempRecord.setLoanType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE);
             tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
-            tempRecord.setIsDisabilities(request.getSalaryAdvanceInitRequest().isDisabilities());
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
+
+            // Kiểm tra KH đã từng tạo khoản vay thành công chưa
+            // - Lần đầu: không put key → context.get("showDisabilities") trả null → FE hiển thị màn hình
+            // - Lần sau: put giá trị Boolean thực (true/false) → FE không hiển thị lại
+            ComTransDtlLmt prevRecord = comTransDtlLmtRepo.findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
+                    custInfo.getHostCifId(),
+                    SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
+                    Constant.STATUS_SUCCESS
+            );
+            if (prevRecord != null) {
+                Boolean prevDisabilities = prevRecord.getIsDisabilities();
+                context.put("showDisabilities", prevDisabilities != null ? prevDisabilities : Boolean.FALSE);
+                AppLog.info("[SA INIT] showDisabilities=" + prevDisabilities + " (da tung tao) - hostCifId: " + custInfo.getHostCifId());
+            } else {
+                AppLog.info("[SA INIT] showDisabilities=null (lan dau tao) - hostCifId: " + custInfo.getHostCifId());
+            }
 
             context.put("transId", tempRecord.getId());
             AppLog.info("[SA INIT] Saved INT record - id: " + tempRecord.getId());
