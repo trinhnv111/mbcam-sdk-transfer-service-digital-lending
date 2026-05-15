@@ -108,30 +108,30 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                     tempRecord.setCurrency(saLimitCurrency);
                 }
 
-//                // Ngày hiệu lực / hết hạn limit từ MS Loan
-//                String limitValueDate = (String) context.get("sa_limit_value_date");
-//                String limitEndDate = (String) context.get("sa_limit_end_date");
-//                if (!Utility.isNull(limitValueDate)) {
-//                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
-//                }
-//                if (!Utility.isNull(limitEndDate)) {
-//                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
-//                }
+                // Ngày hiệu lực / hết hạn limit từ MS Loan
+                String limitValueDate = (String) context.get("sa_limit_value_date");
+                String limitEndDate = (String) context.get("sa_limit_end_date");
+                if (!Utility.isNull(limitValueDate)) {
+                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
+                }
+                if (!Utility.isNull(limitEndDate)) {
+                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
+                }
 
-                // Ngày hiệu lực / hết hạn
-                Date nowDay = new Date();
-                tempRecord.setStartDate(nowDay);
+//                // Ngày hiệu lực / hết hạn
+//                Date nowDay = new Date();
+//                tempRecord.setStartDate(nowDay);
+//
+//                Calendar cal = Calendar.getInstance();
+//                cal.setTime(nowDay);
+//                cal.add(Calendar.DAY_OF_YEAR, 365);
+//                Date endDate = cal.getTime();
+//                tempRecord.setEndDate(endDate);
 
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(nowDay);
-                cal.add(Calendar.DAY_OF_YEAR, 365);
-                Date endDate = cal.getTime();
-                tempRecord.setEndDate(endDate);
+//                SimpleDateFormat formatOut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                context.put("sa_start_date_out", limitValueDate);
+                context.put("sa_end_date_out", limitEndDate);
 
-
-                SimpleDateFormat formatOut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                context.put("sa_start_date_out", formatOut.format(nowDay));
-                context.put("sa_end_date_out", formatOut.format(endDate));
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);
                 AppLog.info("[SA CREATE] Update limit record SUCCESS - id: " + tempRecord.getId());

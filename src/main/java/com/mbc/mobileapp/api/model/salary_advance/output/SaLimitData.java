@@ -17,8 +17,7 @@ public class SaLimitData {
     private BigDecimal remaining;
     private String currency;
 //    private Boolean isDisabilities;
-
-    private String startDate;
+//    private String startDate;
     private String endDate;
 
 }

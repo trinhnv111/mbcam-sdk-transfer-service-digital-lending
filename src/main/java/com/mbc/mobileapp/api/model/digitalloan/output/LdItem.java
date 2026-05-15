@@ -17,30 +17,21 @@ public class LdItem {
 
     private String ldId;
     private String branchCode;
-
-    //Dư nợ còn lại
+    //     tổng số dư nợ
     private BigDecimal amount;
 
-    //Đơn vị tiền tệ
+    private String partner;
+    private String channel;
     private String currency;
-
-    //Ngày giải ngân
     private String valueDate;
-
-    //Ngày kết thúc khoản vay
     private String maturityDate;
 
-    /* mục đích sử dụng*/
-    private String useOfLoan;
+    //    tổng số tiền giải ngân - Outstanding balance
+    private BigDecimal amountHits;
 
-    //Outstanding balance
-    private BigDecimal reimburseAmount;
-
-    // Tổng gốc đã trả
+    // principal amount
     private BigDecimal totalRepayPrinAmt;
 
-    // Tiền lãi / phí dự tính
-    private BigDecimal nextRepayIntAmt;
 
     private List<PdData> pdList;
 }

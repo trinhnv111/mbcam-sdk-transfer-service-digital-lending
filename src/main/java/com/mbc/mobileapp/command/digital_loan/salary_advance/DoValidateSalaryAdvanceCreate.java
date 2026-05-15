@@ -2,7 +2,6 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
-import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
@@ -10,57 +9,57 @@ import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class DoValidateSalaryAdvanceCreate implements Command {
 
+    private static final String CAMBODIA_CODE = "CAMBODIA";
+
+    private static final String MSG_REQUEST_NULL                  = "Request null";
+    private static final String MSG_MISSING_REQUIRED_FIELDS       = "Missing required fields";
+    private static final String MSG_MISSING_CAMBODIA_BIRTH_DETAIL = "Missing Cambodia place of birth details";
+
     @Override
-    public boolean execute(Context ctx) throws Exception {
+    public boolean execute(Context ctx) {
         ProcessContext context = (ProcessContext) ctx;
-        Validator.Result result = Validator.Result.OK;
 
         CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
-        SalaryAdvanceCreateRequest req = request.getSalaryAdvanceCreateRequest();
+        SalaryAdvanceCreateRequest req =
+                request != null ? request.getSalaryAdvanceCreateRequest() : null;
 
         if (req == null) {
-            log.error("[DoValidateSalaryAdvanceCreate] Request body is empty");
-            result = new SimpleResult(
-                    ResponseCode.INVALID_INPUT.getDesc(),
-                    false,
-                    ResponseCode.INVALID_INPUT.getCode()
-            );
-            context.setResult(result);
+            log.error("[SalaryAdvanceValidate] {}", MSG_REQUEST_NULL);
+            context.setResult(new SimpleResult(MSG_REQUEST_NULL, false, ResponseCode.INVALID_INPUT.getCode()));
             return true;
         }
 
-        // REQUIRED fields (email + employmentStartDate excluded)
-        if (Utility.isNull(req.getTransId())
-                || Utility.isNull(req.getMaritalStatus())
-                || Utility.isNull(req.getPlaceOfBirth())
-                || Utility.isNull(req.getPlaceOfBirthProvince())
-                || Utility.isNull(req.getPlaceOfBirthDistrict())
-                || Utility.isNull(req.getPlaceOfBirthWard())
-                || Utility.isNull(req.getCurrentAddressProvince())
-                || Utility.isNull(req.getCurrentAddressDistrict())
-                || Utility.isNull(req.getCurrentAddressWard())) {
+        if (StringUtils.isBlank(req.getTransId())
+                || StringUtils.isBlank(req.getMaritalStatus())
+                || StringUtils.isBlank(req.getPlaceOfBirth())
+                || StringUtils.isBlank(req.getCurrentAddressProvince())
+                || StringUtils.isBlank(req.getCurrentAddressDistrict())
+                || StringUtils.isBlank(req.getCurrentAddressWard())) {
 
-            log.error("[DoValidateSalaryAdvanceCreate] Missing required fields");
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
-            context.setResult(result);
+            log.error("[SalaryAdvanceValidate] {} - transId: {}", MSG_MISSING_REQUIRED_FIELDS, req.getTransId());
+            context.setResult(new SimpleResult(MSG_MISSING_REQUIRED_FIELDS, false, ResponseCode.TRANSACTION_FAIL.getCode()));
             return true;
         }
 
-        // Optional email validation (only if provided)
-        if (!Utility.isNull(req.getEmail()) && req.getEmail().contains(" ")) {
-            log.error("[DoValidateSalaryAdvanceCreate] Email INVALID");
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
-            context.setResult(result);
-            return true;
+        if (CAMBODIA_CODE.equalsIgnoreCase(StringUtils.trimToEmpty(req.getPlaceOfBirth()))) {
+            if (StringUtils.isBlank(req.getPlaceOfBirthProvince())
+                    || StringUtils.isBlank(req.getPlaceOfBirthDistrict())
+                    || StringUtils.isBlank(req.getPlaceOfBirthWard())) {
+
+                log.error("[SalaryAdvanceValidate] {} - transId: {}", MSG_MISSING_CAMBODIA_BIRTH_DETAIL, req.getTransId());
+                context.setResult(new SimpleResult(MSG_MISSING_CAMBODIA_BIRTH_DETAIL, false, ResponseCode.INVALID_INPUT.getCode()));
+                return true;
+            }
         }
 
-        context.setResult(result);
+        context.setResult(Validator.Result.OK);
         return false;
     }
 }

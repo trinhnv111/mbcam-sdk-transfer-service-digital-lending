@@ -38,8 +38,16 @@ public class DoGetLoan implements Command {
         CustInfo custInfo = context.getCustomer();
         String custId = custInfo.getId();
         ExecuteT24Output<DoGenT24DayNowOutput> T24DayNowOutput;
+
+        String ldId = null;
+        String accountNo = null;
+        if (request.getGetLoanRequest() != null) {
+            ldId = request.getGetLoanRequest().getLdId();
+            accountNo = request.getGetLoanRequest().getAccountNo();
+        }
+
         try {
-            ExecuteT24Output<GetLoanOutput> executeT24Output = apiMsLoan.getLoan(custInfo.getHostCifId(), custId, request.getRequestId());
+            ExecuteT24Output<GetLoanOutput> executeT24Output = apiMsLoan.getLoan(custInfo.getHostCifId(), ldId, accountNo, custId, request.getRequestId());
             if (Objects.isNull(executeT24Output)) {
                 //get loan timeout
                 log.info("[DoGetLoan] timeout");

@@ -49,15 +49,15 @@ public class CommonServiceResponse extends Response {
     private String token;
 
     private boolean ekycSuccess;
-    
+
     private String hashBankId;
-    
+
     private String bioId;
 
     private List<String> lstCurrency;
-    
+
     private ExecuteT24Output<CustomerInfoT24> customerInfo;
-    
+
     private List<AccountBase> lstNonSavingAccount;
 
     private AcctNumberInfo acctNumberInfo;

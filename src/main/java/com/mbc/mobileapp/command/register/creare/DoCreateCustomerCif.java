@@ -8,6 +8,7 @@ import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.constant.MBCResponseCode;
 import com.mbc.common.entity.ComOpenOnlAcct;
+import com.mbc.common.entity.ComPartnerNotify;
 import com.mbc.common.entity.Cust;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.object.CustInfo;

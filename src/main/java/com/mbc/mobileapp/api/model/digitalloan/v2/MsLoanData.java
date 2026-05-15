@@ -1,10 +1,9 @@
-package com.mbc.mobileapp.api.model.digitalloan.output;
+package com.mbc.mobileapp.api.model.digitalloan.v2;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 
 
@@ -12,9 +11,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GetLoanOutput {
+public class MsLoanData {
     private String customer;
+
     private String customerName;
-    private List<LdItem> ldList;
-//    private List<OdItem> odList;
+
+    private List<MsLdItem> ldList;
+
+    private List<MsOdItem> odList;
 }

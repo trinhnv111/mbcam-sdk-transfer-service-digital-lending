@@ -15,6 +15,7 @@ import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
+
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentResponse;
 import com.mbc.mobileapp.service.base.DigitalLoanService;
@@ -49,11 +50,11 @@ public class DigitalLoanController extends BaseController {
     }
 
     /**
-     * Danh sách khoản vay
+     * Danh sách khoản vay (loanListInfor — ms-loan {@code GET /loan/v2.0/get-loan}).
      *
-     * @param dynRequest    DynamicKeyRequest
+     * @param param         body: session + refNo + optional {@code ldId}
      * @param requestClient HttpServletRequest
-     * @return GetLoanResponse
+     * @return GetLoanResponse (data = {@link com.mbc.mobileapp.api.model.digitalloan.v2.MsLoanData})
      */
     @ApiOperation("Api get loan")
     @PostMapping("/get-ld")
@@ -100,6 +101,8 @@ public class DigitalLoanController extends BaseController {
         log.info("[DIGITAL-LOAN GET Loan] out data: {}", JSON.stringify(resp));
         return resp;
     }
+
+
 
     /**
      * Danh sách khoản vay quá hạn

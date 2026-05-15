@@ -75,9 +75,9 @@ public class DoGetSaLimitService implements Command {
             limitData.setRemaining(approveLimit.subtract(usedLimit));
             limitData.setCurrency(comTransDtlLmt.getCurrency());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            if (comTransDtlLmt.getStartDate() != null) {
-                limitData.setStartDate(sdf.format(comTransDtlLmt.getStartDate()));
-            }
+//            if (comTransDtlLmt.getStartDate() != null) {
+//                limitData.setStartDate(sdf.format(comTransDtlLmt.getStartDate()));
+//            }
             if (comTransDtlLmt.getEndDate() != null) {
                 limitData.setEndDate(sdf.format(comTransDtlLmt.getEndDate()));
             }

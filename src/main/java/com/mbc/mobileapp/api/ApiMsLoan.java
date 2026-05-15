@@ -22,8 +22,8 @@ import java.util.List;
 @Slf4j
 public class ApiMsLoan extends CallMicroService {
 
-    @Value("${microservice.ms-loan.offer-limit:/loan/v1.0/offer-limit}")
-    private String offerLimitPath;
+//    @Value("${microservice.ms-loan.offer-limit:/loan/v1.0/offer-limit}")
+//    private String offerLimitPath;
     public ApiMsLoan() {
     }
 
@@ -33,11 +33,17 @@ public class ApiMsLoan extends CallMicroService {
      * @param requestId
      * @return
      */
-    public ExecuteT24Output<GetLoanOutput> getLoan(String hostCifId, String custId, String requestId) {
+    public ExecuteT24Output<GetLoanOutput> getLoan(String hostCifId, String ldId, String accountNo, String custId, String requestId) {
         String messageId = Utility.getUUID();
         HttpHeaders headers = buildHeader(custId, requestId, messageId);
         String url = getUrl("microservice.ms-loan.host") + getUrl("microservice.ms-loan.get-loan");
         UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(url).queryParam("customerCode", hostCifId);
+        if (!Utility.isNull(ldId)) {
+            uri.queryParam("ldID", ldId);
+        }
+        if (!Utility.isNull(accountNo)) {
+            uri.queryParam("accountNo", accountNo);
+        }
         ExecuteT24Output<GetLoanOutput> output = getForMicroService(uri.build().toUri(), headers,
                 new ParameterizedTypeReference<ExecuteT24Output<GetLoanOutput>>() {});
         mappingErrorCode(output);
@@ -93,9 +99,9 @@ public class ApiMsLoan extends CallMicroService {
 
             String host = getUrl("microservice.ms-loan.host");
             String path = getUrl("microservice.ms-loan.offer-limit");
-            if (Utility.isNull(path)) {
-                path = offerLimitPath;
-            }
+//            if (Utility.isNull(path)) {
+//                path = offerLimitPath;
+//            }
             String url = host + path;
 
             log.info("[ApiMsLoan] Calling MS Loan offer-limit - url: {}, customerCode: {}",

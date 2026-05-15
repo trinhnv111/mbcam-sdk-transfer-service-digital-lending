@@ -7,4 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GetLoanRequest extends BaseRequest {
+    private String ldId;
+    private String accountNo;
 }

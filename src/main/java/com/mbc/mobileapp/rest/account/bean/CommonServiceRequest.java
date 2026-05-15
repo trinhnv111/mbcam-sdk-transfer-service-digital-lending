@@ -1,25 +1,7 @@
+package com.mbc.mobileapp.rest.account.bean;
 
-package com.mbc.mobileapp.rest.bean;
 
-import com.mbc.common.api.models.ekyc.CheckOcrMobileData;
-import com.mbc.common.bean.Request;
-import com.mbc.common.bean.TokenOtp;
 import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetLoanRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.PaymentRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
-import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
-import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
-import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountNameRequest;
-import com.mbc.mobileapp.rest.remittance.init.InitMakeTransferInfo;
-import com.mbc.mobileapp.rest.saving.close.DepositClosureInfo;
-import com.mbc.mobileapp.rest.saving.interest.InterestRequest;
-import com.mbc.mobileapp.rest.saving.open.SavingInfo;
-import com.mbc.mobileapp.rest.saving.topup.TopUpSavingInfo;
-import com.mbc.mobileapp.rest.transfer.TransInfo;
-import com.mbc.mobileapp.rest.user.initsdk.InitSdkInfo;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,7 +9,7 @@ import java.util.Date;
 
 @Setter
 @Getter
-public class CommonServiceRequest extends Request {
+public class CommonServiceRequest  {
 
     // user
     private String userId;
@@ -48,7 +30,6 @@ public class CommonServiceRequest extends Request {
 
     private String newPassword;
 
-    private TokenOtp tokenOTP;
 
     private String phoneNo;
 
@@ -150,8 +131,8 @@ public class CommonServiceRequest extends Request {
 //
 //    private DepositClosureInfo depositClosureInfo;
 
-    //LOG ONBOARDING
-    private CheckOcrMobileData checkOcrMobileData;
+//    //LOG ONBOARDING
+//    private CheckOcrMobileData checkOcrMobileData;
 
     private String createCif;
 
@@ -165,15 +146,15 @@ public class CommonServiceRequest extends Request {
 
     //topup deposit info
     private boolean isInterestRate;
-
+    
 //    private TopUpSavingDepositInfo topUpSavingDepositInfo;
-
+    
 
 
 //    private InterestRequest interestRequest;
 
     //=======USER=================================
-    private InitSdkInfo initSdkInfo;
+//    private InitSdkInfo initSdkInfo;
 
     private String tId;
 
@@ -185,15 +166,15 @@ public class CommonServiceRequest extends Request {
 
     private String promoCode;
 
-    private GetAccountNameRequest getAccountNameRequest;
-
-    private InitMakeTransferInfo initMakeTransferInfo;
-
-    private MakeTransferFinishRequest makeTransferFinishRequest;
+//    private GetAccountNameRequest getAccountNameRequest;
+//
+//    private InitMakeTransferInfo initMakeTransferInfo;
+//
+//    private MakeTransferFinishRequest makeTransferFinishRequest;
 
 
     //=======TRANSFER=================================
-    private TransInfo transInfo;
+//    private TransInfo transInfo;
 
     private String participantCode;
 
@@ -214,13 +195,13 @@ public class CommonServiceRequest extends Request {
     //=======SAVING=================================
     private String savingProductCode;
 
-    private InterestRequest interestRequest;
-
-    private SavingInfo savingInfo;
-
-    private DepositClosureInfo depositClosureInfo;
-
-    private TopUpSavingInfo topUpSavingInfo;
+//    private InterestRequest interestRequest;
+//
+//    private SavingInfo savingInfo;
+//
+//    private DepositClosureInfo depositClosureInfo;
+//
+//    private TopUpSavingInfo topUpSavingInfo;
 
 
     //=======BENEFICIARY=================================
@@ -246,19 +227,5 @@ public class CommonServiceRequest extends Request {
     private RegisterCustInfo registerCustInfo;
 
     private String registerCustId;
-
-    //region Digital Lending Common
-    private GetLoanRequest getLoanRequest;
-    private PaymentRequest paymentRequest;
-    private LoanRepaymentRequest loanRepaymentRequest;
-    //endregion
-
-    //region Salary Advance
-    private SalaryAdvanceInitRequest salaryAdvanceInitRequest;
-    private SalaryAdvanceCreateRequest salaryAdvanceCreateRequest;
-    //endregion
-
-    // get limit
-    private GetSaLimitRequest getSaLimitRequest;
 
 }
