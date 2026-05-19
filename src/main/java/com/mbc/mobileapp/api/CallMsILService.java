@@ -5,8 +5,10 @@ import com.mbc.common.dto.AccountVipDTO;
 import com.mbc.common.il.base.ExecuteT24Input;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.il.base.ExecuteT24VersionInput;
+import com.mbc.common.services.il.nonsavingacct.NonSavingAcctInput;
 import com.mbc.common.util.T24RoutineUtil;
 import com.mbc.common.util.Utility;
+import com.mbc.mobileapp.api.model.digitalloan.output.ILOutput;
 import com.mbc.mobileapp.api.model.register.NonSavingAccount;
 import com.mbc.mobileapp.api.model.register.NonSavingAcctDataOutput;
 import com.mbc.mobileapp.api.model.saving.account.AccountSaving;
@@ -77,7 +79,7 @@ public class CallMsILService extends CallMicroService {
         HttpHeaders header = buildHeader(custId, requestId, Utility.getUUID());
         
         ExecuteT24Input input = new ExecuteT24Input();
-        input.setDestination(T24RoutineUtil.GET_SAVING_ACCOUNT_LIST_V3);
+            input.setDestination(T24RoutineUtil.GET_SAVING_ACCOUNT_LIST_V3);
         input.setVersion("1.0");      
         input.setMessage(message);
 
@@ -92,6 +94,27 @@ public class CallMsILService extends CallMicroService {
         return output;
     }
 
+
+    public ExecuteT24Output<List<ILOutput>> getSavingAccountListV2(NonSavingAcctInput message, String custId, String requestId) throws IOException {
+
+
+        HttpHeaders header = buildHeader(custId, requestId, Utility.getUUID());
+
+        ExecuteT24Input input = new ExecuteT24Input();
+        input.setDestination(T24RoutineUtil.GET_NON_SAVING_ACCOUNT_LIST_V2);
+        input.setVersion("1.0");
+        input.setMessage(message);
+
+        StringBuilder url = new StringBuilder();
+        url.append(IL_HOST_URL);
+        url.append(getUrl("il.t24.routine.url"));
+
+        ExecuteT24Output<List<ILOutput>> output = postForMicroService(url.toString(), header, input,
+                new ParameterizedTypeReference<ExecuteT24Output<List<ILOutput>>>() {
+                });
+        mappingErrorCode(output);
+        return output;
+    }
 
 
     public ExecuteT24Output<NonSavingAcctDataOutput> createNonSavingAccount(NonSavingAccount body, String custId,

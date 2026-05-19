@@ -3,12 +3,11 @@ package com.mbc.mobileapp.command.digital_loan.salary_advance;
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.entity.ComTrans;
-import com.mbc.common.entity.ComTransProcess;
 import com.mbc.common.entity.ComTransDtlLmt;
-import com.mbc.common.object.CustInfo;
+import com.mbc.common.entity.ComTransProcess;
+import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.repository.ComTransProcessRepo;
 import com.mbc.common.repository.ComTransRepo;
-import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.Utility;
@@ -22,10 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
 
@@ -112,25 +109,28 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 String limitValueDate = (String) context.get("sa_limit_value_date");
                 String limitEndDate = (String) context.get("sa_limit_end_date");
                 if (!Utility.isNull(limitValueDate)) {
-                    try { tempRecord.setStartDate(sdf.parse(limitValueDate)); } catch (Exception ignored) {}
+                    try {
+                        tempRecord.setStartDate(sdf.parse(limitValueDate));
+                    } catch (Exception ignored) {
+                    }
                 }
                 if (!Utility.isNull(limitEndDate)) {
-                    try { tempRecord.setEndDate(sdf.parse(limitEndDate)); } catch (Exception ignored) {}
+                    try {
+                        tempRecord.setEndDate(sdf.parse(limitEndDate));
+                    } catch (Exception ignored) {
+                    }
                 }
 
 //                // Ngày hiệu lực / hết hạn
-//                Date nowDay = new Date();
-//                tempRecord.setStartDate(nowDay);
-//
-//                Calendar cal = Calendar.getInstance();
-//                cal.setTime(nowDay);
-//                cal.add(Calendar.DAY_OF_YEAR, 365);
-//                Date endDate = cal.getTime();
-//                tempRecord.setEndDate(endDate);
 
-//                SimpleDateFormat formatOut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 context.put("sa_start_date_out", limitValueDate);
                 context.put("sa_end_date_out", limitEndDate);
+
+                Date startDate = java.sql.Date.valueOf(limitValueDate);
+                Date endDate = java.sql.Date.valueOf(limitEndDate);
+
+                tempRecord.setLimitValueDate(startDate);
+                tempRecord.setLimitEndDate(endDate);
 
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);

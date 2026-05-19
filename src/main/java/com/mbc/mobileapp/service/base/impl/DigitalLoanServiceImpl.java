@@ -125,7 +125,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     }
 
     @Override
-    public ValidDisbursementResponse validDisbursement(Request request, CustInfo cust) {
+    public ValidDisbursementResponse validDisbursement(CommonServiceRequest request, CustInfo cust) {
         ProcessContext context = loadContext(request, cust);
         ValidDisbursementResponse response = new ValidDisbursementResponse();
         Validator.Result result;
@@ -146,9 +146,9 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     }
 
     @Override
-    public DisbursementResponse<Object> disbursement(Request request, CustInfo cust, TokenOtp tokenOtp) {
+    public DisbursementResponse<Object> disbursement(Request request, CustInfo cust) {
         ProcessContext context = loadContext(request, cust);
-        context.putVar(Constant.KeyVar.OTP, tokenOtp);
+//        context.putVar(Constant.KeyVar.OTP, tokenOtp);
         DisbursementResponse<Object> response = new DisbursementResponse<>();
         Validator.Result result;
         try {

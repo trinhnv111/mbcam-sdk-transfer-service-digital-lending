@@ -21,9 +21,9 @@ public interface DigitalLoanService {
 
     LoanRepaymentResponse repayment(CommonServiceRequest request, CustInfo cust, TokenOtp otp);
 
-    ValidDisbursementResponse validDisbursement(Request request, CustInfo cust);
+    ValidDisbursementResponse validDisbursement(CommonServiceRequest request, CustInfo cust);
 
-    DisbursementResponse<Object> disbursement(Request request, CustInfo cust, TokenOtp tokenOtp);
+    DisbursementResponse<Object> disbursement(Request request, CustInfo cust);
 
 
 }

@@ -3,8 +3,6 @@ package com.mbc.mobileapp.controller;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.controller.BaseController;
 import com.mbc.common.object.CustInfo;
-import com.mbc.common.rest.bean.DynamicKeyRequest;
-import com.mbc.common.rest.bean.DynamicKeyResponse;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.JSON;
 import com.mbc.common.util.Utility;
@@ -119,7 +117,7 @@ public class SalaryAdvanceController extends BaseController {
 //            }
 //        }
 //        log.info("[SDK SALARY ADVANCE INIT] input data: {}", JSON.stringify(param));
-//        // validation
+        // validation
         result = validate(param);
         if (!result.isOk()) {
             resp.setResult(result);

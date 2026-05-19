@@ -5,6 +5,7 @@ import com.mbc.common.api.models.ekyc.CheckOcrMobileData;
 import com.mbc.common.bean.Request;
 import com.mbc.common.bean.TokenOtp;
 import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetLoanRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.PaymentRequest;
@@ -246,6 +247,8 @@ public class CommonServiceRequest extends Request {
     private RegisterCustInfo registerCustInfo;
 
     private String registerCustId;
+
+    private ValidDisbursementRequest validDisbursementRequest;
 
     //region Digital Lending Common
     private GetLoanRequest getLoanRequest;

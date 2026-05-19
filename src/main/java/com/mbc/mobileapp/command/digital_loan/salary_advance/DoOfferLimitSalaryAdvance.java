@@ -103,9 +103,29 @@ public class DoOfferLimitSalaryAdvance implements Command {
      * salaryInfo chứa T1/T2/T3 lương.
      */
     private MsLoanOfferLimitRequest buildMsLoanRequest(String hostCifId, EmSalaryInfo salary) {
+
         List<MsLoanOfferLimitRequest.SalaryDetail> salaryDetails = new ArrayList<>();
 
         if (salary != null) {
+
+//            BigDecimal amount = null;
+//
+//            // T3 (latest)
+//            amount = pickSalary(salary.getSalaryAmountT3USD(), salary.getSalaryAmountT3KHR());
+//
+//            // fallback T2
+//            if (amount == null) {
+//                amount = pickSalary(salary.getSalaryAmountT2USD(), salary.getSalaryAmountT2KHR());
+//            }
+//
+//            // fallback T1
+//            if (amount == null) {
+//                amount = pickSalary(salary.getSalaryAmountT1USD(), salary.getSalaryAmountT1KHR());
+//            }
+//
+//            if (amount != null) {
+//                addSalaryDetail(salaryDetails, amount);
+//            }
             // Tháng 1 (T1)
             addSalaryDetail(salaryDetails, salary.getSalaryAmountT1USD() != null ? salary.getSalaryAmountT1USD() : salary.getSalaryAmountT1KHR()
             );
@@ -113,10 +133,11 @@ public class DoOfferLimitSalaryAdvance implements Command {
             // Tháng 2 (T2)
             addSalaryDetail(salaryDetails, salary.getSalaryAmountT2USD() != null ? salary.getSalaryAmountT2USD() : salary.getSalaryAmountT2KHR()
             );
-
             // Tháng 3 (T3)
             addSalaryDetail(salaryDetails, salary.getSalaryAmountT3USD() != null ? salary.getSalaryAmountT3USD() : salary.getSalaryAmountT3KHR()
             );
+
+
         }
 
         return MsLoanOfferLimitRequest.builder()
@@ -129,6 +150,13 @@ public class DoOfferLimitSalaryAdvance implements Command {
                 .salaryDetail(salaryDetails)
                 .build();
     }
+
+//    /**
+//     * USD priority, fallback KHR
+//     */
+//    private BigDecimal pickSalary(BigDecimal usd, BigDecimal khr) {
+//        return usd != null ? usd : khr;
+//    }
 
     private void addSalaryDetail(List<MsLoanOfferLimitRequest.SalaryDetail> details, BigDecimal amount) {
         if (amount != null) {

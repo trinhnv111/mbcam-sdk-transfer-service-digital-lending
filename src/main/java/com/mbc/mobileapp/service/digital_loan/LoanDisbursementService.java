@@ -18,7 +18,7 @@ public class LoanDisbursementService extends ChainBase {
     private final DoCheckRefNo doCheckRefNo;
     private final CheckCustomerState checkCustomerState;
     private final DoCheckSrvc doCheckSrvc;
-    private final ValidateOTP validateOTP;
+//    private final ValidateOTP validateOTP;
     private final DoDisbursement doDisbursement;
 
     @PostConstruct
@@ -26,7 +26,7 @@ public class LoanDisbursementService extends ChainBase {
         addCommand(doCheckRefNo);
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
-        addCommand(validateOTP);
+//        addCommand(validateOTP);
         addCommand(doDisbursement);
     }
 

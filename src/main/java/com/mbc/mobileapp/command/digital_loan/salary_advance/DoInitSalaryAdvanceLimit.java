@@ -73,7 +73,6 @@ public class DoInitSalaryAdvanceLimit implements Command {
             // --- ComTransDtlLmt ---
             ComTransDtlLmt tempRecord = new ComTransDtlLmt();
             tempRecord.setId(comTrans.getId());
-            tempRecord.setTempId(comTrans.getId());
             tempRecord.setHostCifId(custInfo.getHostCifId());
             tempRecord.setNationalId(custInfo.getIdTypNo());
 

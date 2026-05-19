@@ -4,3 +4,88 @@ VALUES ('SRVC_SALARY_ADVANCE', 0, 'Salary Advance Loan', 'SALARY ADVANCE LOAN', 
         'SYSTEM',
         SYSDATE, 'NON');
 
+CREATE TABLE COM_LOAN_DISBUR_LMT
+(
+    ID                        VARCHAR2(50) NOT NULL PRIMARY KEY,
+
+    HOST_CIF_ID               VARCHAR2(50),
+    NATIONALID                VARCHAR2(50),
+
+    IS_DISABILITIES           NUMBER(1),
+
+    SALARY_INFO_DETAIL        CLOB,
+
+    FULL_NAME                 VARCHAR2(50),
+    EMAIL                     VARCHAR2(100),
+
+    START_DATE                DATE,
+    END_DATE                  DATE,
+
+    GENDER                    VARCHAR2(50),
+    DATE_OF_BIRTH             DATE,
+    NATIONALITY               VARCHAR2(50),
+
+    CURRENCY                  VARCHAR2(5),
+
+    REMAINING                 NUMBER(18,2),
+
+    REFERRER_PHONE            VARCHAR2(20),
+    BRANCHID                  VARCHAR2(20),
+    RM_CODE                   VARCHAR2(20),
+    RM_NAME                   VARCHAR2(100),
+
+    MARITAL_STATUS            VARCHAR2(20),
+
+    PLACE_OF_BIRTH            VARCHAR2(255),
+    PLACE_OF_BIRTH_PROVINCE   VARCHAR2(255),
+    PLACE_OF_BIRTH_DISTRICT   VARCHAR2(255),
+    PLACE_OF_BIRTH_WARD       VARCHAR2(255),
+
+    ADDRESS_PROVINCE          VARCHAR2(50),
+    ADDRESS_DISTRICT          VARCHAR2(50),
+    ADDRESS_WARD              VARCHAR2(100),
+
+    OCCUPATION                VARCHAR2(50),
+    COMPANY_NAME              VARCHAR2(100),
+    EMPLOYMENT_START_DATE     DATE,
+
+    MONTHLY_INCOME            NUMBER(18,2),
+
+    LOAN_TYPE                 VARCHAR2(100),
+
+    DEVICEID                  VARCHAR2(50),
+
+    APP_LOAN_ID               VARCHAR2(100),
+
+    LD_ID                     VARCHAR2(100),
+
+    STEP                      VARCHAR2(100),
+    STATUS                    VARCHAR2(20),
+    ERROR                     VARCHAR2(200),
+    SOAERRORCODE              VARCHAR2(20),
+
+    MONTHLY_SALARY_AMOUNT_USD NUMBER(18,2),
+
+    LOAN_LIMIT                NUMBER(5,2),
+
+    APPROVE_LIMIT             NUMBER(15,2),
+    USED_LIMIT                NUMBER(15,2),
+
+    LIMIT_VALUE_DATE          DATE,
+    LIMIT_END_DATE            DATE,
+    CREATED_DATE_LIMIT        DATE,
+
+    EM_CUSTOMER_ID            VARCHAR2(100),
+
+    CREATED_AT                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
+    UPDATED_DATE              DATE,
+    CREATED_DATE              DATE
+);
+
+create table COM_LOAN_DISBUR_LMT_HISTORY
+(
+    ID           VARCHAR2(50) NOT NULL PRIMARY KEY,
+    CUST_ID      VARCHAR2(50),
+    CREATED_DATE TIMESTAMP(6) default CURRENT_TIMESTAMP not null,
+    UPDATED_DATE TIMESTAMP(6)
+)

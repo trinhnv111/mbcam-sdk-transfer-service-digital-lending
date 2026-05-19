@@ -157,32 +157,31 @@ public class DigitalLoanController extends BaseController {
     /**
      * Lịch sử trả nợ khoản vay
      *
-     * @param dynRequest    DynamicKeyRequest
      * @param requestClient HttpServletRequest
      * @return GetPaymentHistoryResponse
      */
     @ApiOperation("Api get payment history")
     @PostMapping("/get-payment-history")
-    public GetPaymentHistoryResponse getPaymentHistory(@RequestBody @Valid DynamicKeyRequest dynRequest, HttpServletRequest requestClient) {
+    public GetPaymentHistoryResponse getPaymentHistory(@RequestBody GetPaymentHistoryRequest param, HttpServletRequest requestClient) {
         GetPaymentHistoryResponse resp = new GetPaymentHistoryResponse();
         Result result;
-        GetPaymentHistoryRequest param;
-        if (dynKeyEnabled) {
-            DynamicKeyResponse<GetPaymentHistoryRequest> dynResponse = dynDecryptData1(dynRequest, GetPaymentHistoryRequest.class);
-            param = dynResponse.getData();
-            if (param == null) {
-                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
-                resp.setResult(result);
-
-            }
-        } else {
-            param = mapDataRequestBody(dynRequest.getDataEncrypt(), GetPaymentHistoryRequest.class);
-            if (param == null) {
-                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
-                resp.setResult(result);
-            }
-        }
-        log.info("[DIGITAL-LOAN GET PAYMENT-HISTORY] input data: {}", JSON.stringify(param));
+//        GetPaymentHistoryRequest param;
+//        if (dynKeyEnabled) {
+//            DynamicKeyResponse<GetPaymentHistoryRequest> dynResponse = dynDecryptData1(dynRequest, GetPaymentHistoryRequest.class);
+//            param = dynResponse.getData();
+//            if (param == null) {
+//                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false, ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
+//                resp.setResult(result);
+//
+//            }
+//        } else {
+//            param = mapDataRequestBody(dynRequest.getDataEncrypt(), GetPaymentHistoryRequest.class);
+//            if (param == null) {
+//                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false, ResponseCode.INVALID_INPUT.getCode());
+//                resp.setResult(result);
+//            }
+//        }
+//        log.info("[DIGITAL-LOAN GET PAYMENT-HISTORY] input data: {}", JSON.stringify(param));
         // validation
         result = validate(param);
         if (!result.isOk()) {
@@ -196,7 +195,7 @@ public class DigitalLoanController extends BaseController {
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
                 request.setPaymentRequest(param.getData());
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_DIGITAL_LOAN);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = digitalLoanService.getPaymentHistory(request, cust);
 
             }
@@ -300,7 +299,8 @@ public class DigitalLoanController extends BaseController {
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_LOAN_OD_DISBURSEMENT);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
+                request.setValidDisbursementRequest(param);
                 resp = digitalLoanService.validDisbursement(request, cust);
             }
         }
@@ -354,7 +354,7 @@ public class DigitalLoanController extends BaseController {
                 request.setPartnerId(principal.getName());
                 request.setSrvcCdCheck(Constant.SrvcCd.SRVC_LOAN_OD_DISBURSEMENT);
                 request.setTransId(param.getTransId());
-                resp = digitalLoanService.disbursement(request, cust, param.getTokenOTP());
+                resp = digitalLoanService.disbursement(request, cust);
 
             }
         }
