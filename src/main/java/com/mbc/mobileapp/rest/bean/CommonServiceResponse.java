@@ -30,6 +30,8 @@ import com.mbc.mobileapp.api.model.transfer.ciftp.CiftpMakeConfigInfo;
 import com.mbc.mobileapp.object.ProductSavingV2;
 import com.mbc.mobileapp.rest.account.AcctNumberInfo;
 import com.mbc.mobileapp.rest.account.history.TransHistoryInfo;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
 import com.mbc.mobileapp.rest.digitalloan.repayment.RepaymentInfo;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountName;
@@ -161,4 +163,5 @@ public class CommonServiceResponse extends Response {
     //endregion
 
     private SaLimitData saLimitData;
+    private ValidDisbursementResponse validDisbursementResponse;
 }

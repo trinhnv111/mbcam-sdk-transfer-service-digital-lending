@@ -108,24 +108,6 @@ public class DoOfferLimitSalaryAdvance implements Command {
 
         if (salary != null) {
 
-//            BigDecimal amount = null;
-//
-//            // T3 (latest)
-//            amount = pickSalary(salary.getSalaryAmountT3USD(), salary.getSalaryAmountT3KHR());
-//
-//            // fallback T2
-//            if (amount == null) {
-//                amount = pickSalary(salary.getSalaryAmountT2USD(), salary.getSalaryAmountT2KHR());
-//            }
-//
-//            // fallback T1
-//            if (amount == null) {
-//                amount = pickSalary(salary.getSalaryAmountT1USD(), salary.getSalaryAmountT1KHR());
-//            }
-//
-//            if (amount != null) {
-//                addSalaryDetail(salaryDetails, amount);
-//            }
             // Tháng 1 (T1)
             addSalaryDetail(salaryDetails, salary.getSalaryAmountT1USD() != null ? salary.getSalaryAmountT1USD() : salary.getSalaryAmountT1KHR()
             );
@@ -151,12 +133,6 @@ public class DoOfferLimitSalaryAdvance implements Command {
                 .build();
     }
 
-//    /**
-//     * USD priority, fallback KHR
-//     */
-//    private BigDecimal pickSalary(BigDecimal usd, BigDecimal khr) {
-//        return usd != null ? usd : khr;
-//    }
 
     private void addSalaryDetail(List<MsLoanOfferLimitRequest.SalaryDetail> details, BigDecimal amount) {
         if (amount != null) {

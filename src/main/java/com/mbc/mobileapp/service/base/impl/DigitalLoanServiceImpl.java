@@ -24,6 +24,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -137,6 +140,25 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
             if (result.isOk()) {
                 CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
                 response.setTransId(res.getTransId());
+
+                // ĐOẠN MAP DỮ LIỆU MỚI (Thay cho dòng lỗi của bạn)
+                if (res.getLstNonSavingAccount() != null) {
+                    List<ValidDisbursementResponse.DisbursementAccountInfo> accountInfos = new ArrayList<>();
+                    for (com.mbc.common.services.il.nonsavingacct.AccountBase accountBase : res.getLstNonSavingAccount()) {
+                        ValidDisbursementResponse.DisbursementAccountInfo info = new ValidDisbursementResponse.DisbursementAccountInfo();
+                        info.setAcctId(accountBase.getAcctId());
+                        info.setAcctnCurrency(accountBase.getAcctnCurrency());
+                        info.setAcctnName(accountBase.getAcctnName());
+                        if (accountBase.getBalance() != null) {
+                            info.setActual(accountBase.getBalance().getActual());
+                        }
+                        if (accountBase.getRelationshipManager() != null && !accountBase.getRelationshipManager().isEmpty()) {
+                            info.setPhoneNo(accountBase.getRelationshipManager().get(0).getPhoneNo());
+                        }
+                        accountInfos.add(info);
+                    }
+                    response.setAccountList(accountInfos);
+                }
             }
         } catch (Exception e) {
             log.error(e.toString());
@@ -144,6 +166,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
         }
         return response;
     }
+
 
     @Override
     public DisbursementResponse<Object> disbursement(Request request, CustInfo cust) {

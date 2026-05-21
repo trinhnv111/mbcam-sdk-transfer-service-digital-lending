@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class AcctNumberInfo {
-    
+
     private String accountNo;
     private String accountType;
     private String accountCurrency;

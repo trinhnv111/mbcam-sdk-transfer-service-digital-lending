@@ -8,6 +8,7 @@ import com.mbc.common.il.base.ExecuteT24VersionInput;
 import com.mbc.common.services.il.nonsavingacct.NonSavingAcctInput;
 import com.mbc.common.util.T24RoutineUtil;
 import com.mbc.common.util.Utility;
+import com.mbc.mobileapp.api.model.digitalloan.output.AccountCodeArr;
 import com.mbc.mobileapp.api.model.digitalloan.output.ILOutput;
 import com.mbc.mobileapp.api.model.register.NonSavingAccount;
 import com.mbc.mobileapp.api.model.register.NonSavingAcctDataOutput;
@@ -95,7 +96,7 @@ public class CallMsILService extends CallMicroService {
     }
 
 
-    public ExecuteT24Output<List<ILOutput>> getSavingAccountListV2(NonSavingAcctInput message, String custId, String requestId) throws IOException {
+    public ExecuteT24Output<List<AccountCodeArr>> getSavingAccountListV2(NonSavingAcctInput message, String custId, String requestId) throws IOException {
 
 
         HttpHeaders header = buildHeader(custId, requestId, Utility.getUUID());
@@ -109,8 +110,8 @@ public class CallMsILService extends CallMicroService {
         url.append(IL_HOST_URL);
         url.append(getUrl("il.t24.routine.url"));
 
-        ExecuteT24Output<List<ILOutput>> output = postForMicroService(url.toString(), header, input,
-                new ParameterizedTypeReference<ExecuteT24Output<List<ILOutput>>>() {
+        ExecuteT24Output<List<AccountCodeArr>> output = postForMicroService(url.toString(), header, input,
+                new ParameterizedTypeReference<ExecuteT24Output<List<AccountCodeArr>>>() {
                 });
         mappingErrorCode(output);
         return output;

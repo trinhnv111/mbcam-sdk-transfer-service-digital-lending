@@ -42,11 +42,11 @@ public class DoGetPaymentHistory implements Command {
         CustInfo custInfo = context.getCustomer();
         String custId = custInfo.getId();
         try {
-            if (!Utilities.isValidDate(req.getFromDate(), "yyyyMMdd") || !Utilities.isValidDate(req.getToDate(), "yyyyMMdd")) {
-                result = new SimpleResult(CommonResponseCode.DATE_FORMAT_INVALID.getErrorDesc(), false, CommonResponseCode.DATE_FORMAT_INVALID.getErrorCode());
-                context.setResult(result);
-                return !result.isOk();
-            }
+//            if (!Utilities.isValidDate(req.getFromDate(), "yyyyMMdd") || !Utilities.isValidDate(req.getToDate(), "yyyyMMdd")) {
+//                result = new SimpleResult(CommonResponseCode.DATE_FORMAT_INVALID.getErrorDesc(), false, CommonResponseCode.DATE_FORMAT_INVALID.getErrorCode());
+//                context.setResult(result);
+//                return !result.isOk();
+//            }
             ExecuteT24Output<List<PaymentHistoryOutPut>> executeT24Output = apiMsLoan.getPaymentHistory(req.getLoanId(), req.getFromDate(), req.getToDate(), custId, request.getRequestId());
             if (Objects.isNull(executeT24Output)) {
                 //get history timeout

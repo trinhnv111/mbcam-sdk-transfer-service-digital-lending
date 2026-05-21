@@ -29,7 +29,7 @@ public class AccountCodeArr {
     private String mnemonic;
     private String acctnStatus;
     private String interestLiquAcct;
-    private JsonNode postingRestrictList;
+    private List<PostingRestrict> postingRestrictList;
 
     private List<ProductInfo> productInfo;
     private BranchInfo branchInfo;
@@ -40,7 +40,7 @@ public class AccountCodeArr {
     @JsonProperty("rm")
     private List<RelationshipManager> relationshipManager;
     private List<JointHolder> jointholder;
-    private JsonNode delegate;
+    private List<String> delegate;
     private String expDate;
     private String interestRate;
     private String recordStatus;
