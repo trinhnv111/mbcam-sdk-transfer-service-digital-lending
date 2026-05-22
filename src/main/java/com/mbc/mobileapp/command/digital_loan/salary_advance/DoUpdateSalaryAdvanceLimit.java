@@ -14,6 +14,7 @@ import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
+import com.mbc.mobileapp.constant.MaritalStatus;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import lombok.RequiredArgsConstructor;
@@ -66,15 +67,15 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 ComTransDtlLmt tempRecord = tempRecordOpt.get();
                 SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);
 
-                tempRecord.setMaritalStatus(String.valueOf(req.getMaritalStatus()));
+                tempRecord.setMaritalStatus(MaritalStatus.fromCode(req.getMaritalStatus()));
                 tempRecord.setAddressProvince(req.getCurrentAddressProvince());
                 tempRecord.setAddressDistrict(req.getCurrentAddressDistrict());
-                LocalDate localDate = LocalDate.parse(
-                        req.getEmploymentStartDate(),
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                );
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-                tempRecord.setEmploymentStartDate(java.sql.Date.valueOf(localDate));
+                LocalDate localDate = LocalDate.parse(req.getEmploymentStartDate(), formatter);
+                Date sqlDate = java.sql.Date.valueOf(localDate);
+
+                tempRecord.setEmploymentStartDate(sqlDate);
                 tempRecord.setAddressWard(req.getCurrentAddressWard());
 
 
@@ -89,12 +90,12 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                     tempRecord.setIsDisabilities(req.getDisabilities());
                 }
 
-                if (!Utility.isNull(req.getEmploymentStartDate())) {
-                    try {
-                        tempRecord.setEmploymentStartDate(sdf.parse(req.getEmploymentStartDate()));
-                    } catch (Exception e) {
-                    }
-                }
+//                if (!Utility.isNull(req.getEmploymentStartDate())) {
+//                    try {
+//                        tempRecord.setEmploymentStartDate(sdf.parse(req.getEmploymentStartDate()));
+//                    } catch (Exception e) {
+//                    }
+//                }
 
                 tempRecord.setStep(SalaryAdvanceConstant.STEP_CREATE_LOAN);
                 tempRecord.setStatus(Constant.STATUS_SUCCESS);

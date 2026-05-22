@@ -6,6 +6,7 @@ import com.mbc.common.command.DoCheckRefNo;
 import com.mbc.common.command.DoCheckSrvc;
 import com.mbc.common.command.ValidateOTP;
 import com.mbc.mobileapp.command.digital_loan.salary_advance.*;
+import com.mbc.mobileapp.command.digital_loan.DoGetPd;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.chain.impl.ChainBase;
 import org.springframework.stereotype.Service;
@@ -21,8 +22,8 @@ public class SalaryAdvanceCreateService extends ChainBase {
     private final ValidateOTP validateOTP;
     private final DoValidateSalaryAdvanceCreate doValidateSalaryAdvanceCreate;
     private final DoCheckConcurrentCbcPdSalaryAdvance doCheckConcurrentCbcPdSalaryAdvance;
-//    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
-//    private final DoGetPd doGetPd;
+    //    private final DoCheckCBCSalaryAdvance doCheckCBCSalaryAdvance;
+    private final DoGetPd doGetPd;
     private final DoValidatePDSalaryAdvance doValidatePDSalaryAdvance;
     private final DoOfferLimitSalaryAdvance doOfferLimitSalaryAdvance;
     private final DoUpdateSalaryAdvanceLimit doUpdateSalaryAdvanceLimit;
@@ -38,7 +39,7 @@ public class SalaryAdvanceCreateService extends ChainBase {
         addCommand(doValidateSalaryAdvanceCreate);
 
         addCommand(doCheckConcurrentCbcPdSalaryAdvance);
-
+        addCommand(doGetPd);
         addCommand(doValidatePDSalaryAdvance);
 
         addCommand(doOfferLimitSalaryAdvance);

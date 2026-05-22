@@ -24,12 +24,16 @@ public class SalaryAdvanceCreateRequest extends BaseRequest {
     private String email;
 
     @Pattern(
-            regexp = "^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$",
-            message = "Date must be in format yyyy-MM-dd"
+            regexp = "^((" +
+                    "(0[1-9]|[12]\\d|3[01])/(0[1-9]|1[0-2])/(19|20)\\d{2}" +
+                    ")|(" +
+                    "(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])" +
+                    "))$",
+            message = "Date must be in format dd/MM/yyyy or yyyy-MM-dd"
     )
     private String employmentStartDate;
 
-    private MaritalStatus maritalStatus;
+    private String maritalStatus;
     private String placeOfBirth;
     private String placeOfBirthProvince;
     private String placeOfBirthDistrict;

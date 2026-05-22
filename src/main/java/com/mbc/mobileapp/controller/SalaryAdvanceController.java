@@ -1,12 +1,10 @@
 package com.mbc.mobileapp.controller;
 
-import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.controller.BaseController;
 import com.mbc.common.object.CustInfo;
+import com.mbc.common.rest.bean.BaseRequest;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.JSON;
-import com.mbc.common.util.Utility;
-import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
 import com.mbc.mobileapp.service.base.SalaryAdvanceService;
@@ -41,8 +39,8 @@ public class SalaryAdvanceController extends BaseController {
 
     @ApiOperation("API get digital loans limit")
     @PostMapping("/offer-limit")
-    public GetSaLimitResponse getLimit(@RequestBody GetSaLimitRequest param, HttpServletRequest requestClient) {
-        GetSaLimitResponse resp = new GetSaLimitResponse();
+    public GetSalaryAdvanceOfferLimitResponse getOfferLimit(@RequestBody BaseRequest param, HttpServletRequest requestClient) {
+        GetSalaryAdvanceOfferLimitResponse resp = new GetSalaryAdvanceOfferLimitResponse();
         com.mbc.common.validator.base.Validator.Result result = null;
 //        GetSaLimitRequest param;
 //        // mã hóa
@@ -72,25 +70,16 @@ public class SalaryAdvanceController extends BaseController {
             CustInfo custInfo = getCustFromSession(param.getSessionId());
 
             if (custInfo != null) {
-//                param.setHostCifId(custInfo.getHostCifId());
-                String hostCif = custInfo.getHostCifId();
-                if (Utility.isNull(hostCif)) {
-                    result = new SimpleResult("CUSTOMER HOST CIF is invalid", false, ResponseCode.INVALID_INPUT.getCode());
-                    resp.setResult(result);
-                }
                 // param common
                 commonServiceRequest = (CommonServiceRequest) setBase(commonServiceRequest, param);
                 Principal principal = requestClient.getUserPrincipal();
                 commonServiceRequest.setPartnerId(principal.getName());
-//                commonServiceRequest.getGetSaLimitRequest(param);
                 commonServiceRequest.setSrvcCd(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
-                resp = salaryAdvanceService.getSaLimit(commonServiceRequest, custInfo);
+                resp = salaryAdvanceService.getSalaryAdvanceOfferLimit(commonServiceRequest, custInfo);
             }
-
         }
         resp.setRefNo(param.getRefNo());
-        log.info("[LOAN GET LIMIT] out data: {}", JSON.stringify(resp));
-
+        log.info("[SALARY ADVANCE GET OFFER LIMIT] out data: {}", JSON.stringify(resp));
         return resp;
     }
 

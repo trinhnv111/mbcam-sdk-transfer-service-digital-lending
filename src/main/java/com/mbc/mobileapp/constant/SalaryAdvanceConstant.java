@@ -8,5 +8,6 @@ public class SalaryAdvanceConstant {
     public static final int MIN_AGE = 18;
     public static final int MAX_AGE = 60;
     public static final String MSISDN855 = "855";
+
 }
 

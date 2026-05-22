@@ -9,9 +9,9 @@ import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.common.services.il.customerinfo.CustomerAddress;
 import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
-import com.mbc.common.services.il.customerinfo.CustomerOccupation;
 import com.mbc.common.util.Utility;
 import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
+import com.mbc.mobileapp.constant.MaritalStatus;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
@@ -19,10 +19,12 @@ import com.mbc.mobileapp.service.base.SalaryAdvanceService;
 import com.mbc.common.repository.ComProvinceRepo;
 import com.mbc.common.repository.ComDistrictRepo;
 import com.mbc.common.repository.ComWardRepo;
+import com.mbc.common.repository.ComCountryRepo;
+import com.mbc.common.entity.ComCountry;
 import com.mbc.common.dto.Province;
 import com.mbc.common.dto.District;
 import com.mbc.common.dto.Ward;
-import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
+import com.mbc.mobileapp.service.salary_advance.GetSalaryAdvanceOfferLimitService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceCreateService;
 import com.mbc.mobileapp.service.salary_advance.SalaryAdvanceInitService;
 import lombok.RequiredArgsConstructor;
@@ -34,26 +36,27 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvanceService {
     private final SalaryAdvanceInitService salaryAdvanceInitService;
-    private final GetSaLimitService getSaLimitService;
+    private final GetSalaryAdvanceOfferLimitService getSalaryAdvanceOfferLimitService;
     private final SalaryAdvanceCreateService salaryAdvanceCreateService;
     private final ComProvinceRepo comProvinceRepo;
     private final ComDistrictRepo comDistrictRepo;
     private final ComWardRepo comWardRepo;
+    private final ComCountryRepo comCountryRepo;
 
 
     @Override
-    public GetSaLimitResponse getSaLimit(CommonServiceRequest request, CustInfo custInfo) {
-        GetSaLimitResponse resp = new GetSaLimitResponse();
+    public GetSalaryAdvanceOfferLimitResponse getSalaryAdvanceOfferLimit(CommonServiceRequest request, CustInfo custInfo) {
+        GetSalaryAdvanceOfferLimitResponse resp = new GetSalaryAdvanceOfferLimitResponse();
         ProcessContext processContext = loadContext(request, custInfo);
         Validator.Result result;
         try {
-            getSaLimitService.execute(processContext);
+            getSalaryAdvanceOfferLimitService.execute(processContext);
             logService.execute(processContext);
             result = processContext.getResult();
             resp.setResult(result);
             if (result.isOk()) {
                 CommonServiceResponse res = (CommonServiceResponse) processContext.getResponse();
-                resp.setData(res.getSaLimitData());
+                resp.setData(res.getSalaryAdvanceOfferLimitData());
             }
 
         } catch (Exception e) {
@@ -186,17 +189,30 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
             output.setEmail(custT24.getContactInfo().getEmailAddress());
         }
 
-//        if (custT24.getMaritalStatus() != null) {
-//            output.setMaritalStatus(custT24.getMaritalStatus());
-//        } else if (custT24.getPerson() != null && custT24.getPerson().getMaritalStatus() != null) {
-//            output.setMaritalStatus(custT24.getPerson().getMaritalStatus());
+//        if (custT24.getPerson().getResidence() != null) {
+//            output.setPlaceOfBirthCountry(custT24.getResidence());
 //        }
 
 
+        if (custT24.getPerson() != null && custT24.getPerson().getResidence() != null) {
+            output.setPlaceOfBirthCountry(custT24.getPerson().getResidence());
+        }
+
+
+        // Map maritalStatusCode — chuyển text T24 (VD: "Single") thành mã code (VD: "S") để client tự xử lý đa ngôn ngữ
+        String rawMarital = null;
+        if (!Utility.isNull(custT24.getMaritalStatus())) {
+            rawMarital = custT24.getMaritalStatus();
+        } else if (custT24.getPerson() != null && !Utility.isNull(custT24.getPerson().getMaritalStatus())) {
+            rawMarital = custT24.getPerson().getMaritalStatus();
+        }
+        if (rawMarital != null) {
+            output.setMaritalStatus(MaritalStatus.toCode(rawMarital));
+        }
 
         CustomerAddress currentAddress = findAddressByType(custT24, "Current");
         if (currentAddress != null) {
-            output.setCurrentCountry(formatCountryName(firstNonBlank(currentAddress.getCountryCode(), currentAddress.getCountry())));
+            output.setCurrentCountry(getCountryNameFromRepo(currentAddress.getCountryCode(), currentAddress.getCountry(), language));
             if ("CAMBODIA".equalsIgnoreCase(currentAddress.getCountry())) {
                 output.setCurrentProvince(currentAddress.getProvinceCode());
                 output.setCurrentDistrict(currentAddress.getDistrictCode());
@@ -222,9 +238,23 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
 
         CustomerAddress residenceAddress = findAddressByType(custT24, "Residence");
         if (residenceAddress != null) {
-            output.setPlaceOfBirthCountryName(formatCountryName(firstNonBlank(residenceAddress.getCountryCode(), residenceAddress.getCountry())));
-            if ("CAMBODIA".equalsIgnoreCase(residenceAddress.getCountry())) {
-                output.setPlaceOfBirthCountry(custT24.getResidence());
+            String residenceCountryName = residenceAddress.getCountry();
+
+            // Lấy country code đã gán từ getPerson().getResidence() ở trên, nếu null thì thử lấy từ custT24.getResidence()
+            String residenceCountryCode = output.getPlaceOfBirthCountry();
+            if (Utility.isNull(residenceCountryCode)) {
+                residenceCountryCode = custT24.getResidence();
+                output.setPlaceOfBirthCountry(residenceCountryCode);
+            }
+
+            output.setPlaceOfBirthCountryName(getCountryNameFromRepo(residenceCountryCode, residenceCountryName, language));
+
+            // Check if Cambodia: if residence is explicitly KH, or (residence is null/empty AND country is CAMBODIA)
+            boolean isCambodia = "KH".equalsIgnoreCase(residenceCountryCode)
+                    || (Utility.isNull(residenceCountryCode) && "CAMBODIA".equalsIgnoreCase(residenceCountryName))
+                    || "CAMBODIA".equalsIgnoreCase(residenceCountryName) && "KH".equalsIgnoreCase(residenceAddress.getCountryCode());
+
+            if (isCambodia) {
                 output.setPlaceOfBirthProvince(residenceAddress.getProvinceCode());
                 output.setPlaceOfBirthDistrict(residenceAddress.getDistrictCode());
                 output.setPlaceOfBirthCommune(residenceAddress.getWardCode());
@@ -244,6 +274,13 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
                     Ward w = comWardRepo.findByWardCode(output.getPlaceOfBirthCommune());
                     if (w != null) output.setPlaceOfBirthCommuneName("KH".equalsIgnoreCase(language) ? w.getWardNameKh() : w.getWardName());
                 }
+            } else {
+                output.setPlaceOfBirthProvince(null);
+                output.setPlaceOfBirthProvinceName(null);
+                output.setPlaceOfBirthDistrict(null);
+                output.setPlaceOfBirthDistrictName(null);
+                output.setPlaceOfBirthCommune(null);
+                output.setPlaceOfBirthCommuneName(null);
             }
         }
 
@@ -252,6 +289,16 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
     }
 
 
+
+    private String getCountryNameFromRepo(String countryCode, String fallbackName, String language) {
+        if (!Utility.isNull(countryCode)) {
+            ComCountry country = comCountryRepo.findById(countryCode).orElse(null);
+            if (country != null) {
+                return "KH".equalsIgnoreCase(language) ? country.getNameKh() : country.getName();
+            }
+        }
+        return formatCountryName(fallbackName);
+    }
 
     private static CustomerAddress findAddressByType(CustomerInfoT24 custT24, String addressTypeCode) {
         if (custT24.getContactInfo() == null || custT24.getContactInfo().getAddress() == null) {

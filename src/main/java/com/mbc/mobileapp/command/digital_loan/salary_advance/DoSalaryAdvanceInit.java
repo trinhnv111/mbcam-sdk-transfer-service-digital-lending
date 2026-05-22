@@ -1,4 +1,4 @@
-//package com.mbc.mobileapp.command.digital_loan.salary_advance;
+package com.mbc.mobileapp.command.digital_loan.salary_advance;//package com.mbc.mobileapp.command.digital_loan.salary_advance;
 //
 //import com.mbc.common.bean.ProcessContext;
 //import com.mbc.common.bean.ResponseCode;

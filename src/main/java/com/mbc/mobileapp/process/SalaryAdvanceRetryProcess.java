@@ -1,4 +1,4 @@
-//package com.mbc.mobileapp.process;
+package com.mbc.mobileapp.process;//package com.mbc.mobileapp.process;
 //
 //import com.mbc.common.entity.ComTrans;
 //import com.mbc.common.entity.ComTransDtlLmt;

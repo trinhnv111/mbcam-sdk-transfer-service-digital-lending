@@ -85,7 +85,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
             if (Utility.isNull(historyOneYear)) {
                 log.error("[DoCheckCBCSalaryAdvance] TH3: historyOneYear is null - CBC has no data - requestId:{}",
                         request.getRequestId());
-                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
+                result = new SimpleResult(ResponseCode.SA_NOT_ELIGIBLE.getDesc(), false, ResponseCode.SA_NOT_ELIGIBLE.getCode());
                 context.setResult(result);
                 return false;
             }
@@ -108,7 +108,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
                  */
                 log.error("[DoCheckCBCSalaryAdvance] TH1: BLOCK - historyOneYear={} - requestId:{}",
                         historyOneYear, request.getRequestId());
-                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
+                result = new SimpleResult(ResponseCode.SA_NOT_ELIGIBLE.getDesc(), false, ResponseCode.SA_NOT_ELIGIBLE.getCode());
             }
 
         } catch (Exception e) {

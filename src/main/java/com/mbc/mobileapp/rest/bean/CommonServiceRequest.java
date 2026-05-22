@@ -5,12 +5,9 @@ import com.mbc.common.api.models.ekyc.CheckOcrMobileData;
 import com.mbc.common.bean.Request;
 import com.mbc.common.bean.TokenOtp;
 import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementInformationRequest;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetLoanRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.PaymentRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceInitRequest;
-import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
+import com.mbc.mobileapp.rest.digitalloan.getloan.*;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountNameRequest;
@@ -259,9 +256,6 @@ public class CommonServiceRequest extends Request {
     //region Salary Advance
     private SalaryAdvanceInitRequest salaryAdvanceInitRequest;
     private SalaryAdvanceCreateRequest salaryAdvanceCreateRequest;
+    private DisbursementInformationRequest digitalLoanRequest;
     //endregion
-
-    // get limit
-    private GetSaLimitRequest getSaLimitRequest;
-
 }

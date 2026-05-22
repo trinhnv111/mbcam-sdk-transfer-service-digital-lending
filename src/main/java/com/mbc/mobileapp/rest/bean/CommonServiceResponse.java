@@ -10,6 +10,7 @@ import com.mbc.common.services.il.customerinfo.CustomerInfoT24;
 import com.mbc.common.services.il.nonsavingacct.AccountBase;
 import com.mbc.mobileapp.api.model.account.transaction.history.bakong.GetDetailTransactionHistoryOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
+import com.mbc.mobileapp.api.model.digitalloan.output.LdFeeData;
 import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanGetPdOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.PaymentHistoryOutPut;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceAddressOutput;
@@ -17,7 +18,7 @@ import com.mbc.mobileapp.api.model.remittance.output.RemittanceBankListOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceMakeTransferFinishOutput;
 import com.mbc.mobileapp.api.model.rm.RmCodeOutput;
 import com.mbc.mobileapp.api.model.salary_advance.output.CustInfoOutput;
-import com.mbc.mobileapp.api.model.salary_advance.output.SaLimitData;
+import com.mbc.mobileapp.api.model.salary_advance.output.SalaryAdvanceOfferLimitData;
 import com.mbc.mobileapp.api.model.saving.account.AccountSaving;
 import com.mbc.mobileapp.api.model.saving.close.DepositClosureOutput;
 import com.mbc.mobileapp.api.model.saving.cob.CheckCoBOutput;
@@ -30,9 +31,8 @@ import com.mbc.mobileapp.api.model.transfer.ciftp.CiftpMakeConfigInfo;
 import com.mbc.mobileapp.object.ProductSavingV2;
 import com.mbc.mobileapp.rest.account.AcctNumberInfo;
 import com.mbc.mobileapp.rest.account.history.TransHistoryInfo;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementInformationResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
 import com.mbc.mobileapp.rest.digitalloan.repayment.RepaymentInfo;
 import com.mbc.mobileapp.rest.remittance.getaccountname.GetAccountName;
 import com.mbc.mobileapp.rest.saving.campaign.CampaignConfig;
@@ -156,12 +156,14 @@ public class CommonServiceResponse extends Response {
     private MsLoanGetPdOutput pdOutput;
     private List<PaymentHistoryOutPut> paymentHistoryOutput;
     private RepaymentInfo repaymentInfo;
+    private LdFeeData ldFeeData;
     //endregion
 
     //region Salary Advance
     private CustInfoOutput custInfoOutput;
     //endregion
 
-    private SaLimitData saLimitData;
+    private SalaryAdvanceOfferLimitData salaryAdvanceOfferLimitData;
     private ValidDisbursementResponse validDisbursementResponse;
+    private DisbursementInformationResponse disbursementInformationResponse;
 }

@@ -21,6 +21,7 @@ public class ValidDisbursementResponse extends BaseResponse {
         private String acctnName;
         private String actual;
         private String phoneNo;
+        private String participantCode;
     }
 
 }

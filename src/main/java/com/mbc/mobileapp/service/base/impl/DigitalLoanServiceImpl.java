@@ -7,19 +7,17 @@ import com.mbc.common.object.CustInfo;
 import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Constant;
 import com.mbc.common.validator.base.Validator;
-import com.mbc.mobileapp.api.model.salary_advance.output.SaLimitData;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementInformationResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetLoanResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetPaymentHistoryResponse;
 import com.mbc.mobileapp.rest.digitalloan.getloan.GetPdResponse;
-import com.mbc.mobileapp.rest.digitalloan.getloan.GetSaLimitResponse;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentResponse;
 import com.mbc.mobileapp.service.base.DigitalLoanService;
 import com.mbc.mobileapp.service.digital_loan.*;
-import com.mbc.mobileapp.service.salary_advance.GetSaLimitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +35,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     private final LoanRepaymentService loanRepaymentService;
     private final LoanValidDisbursementService loanValidDisbursementService;
     private final LoanDisbursementService loanDisbursementService;
+    private final LoanDisbursementInformation loanDisbursementInformation;
 
     @Override
     public GetLoanResponse getLoan(CommonServiceRequest request, CustInfo cust) {
@@ -149,6 +148,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
                         info.setAcctId(accountBase.getAcctId());
                         info.setAcctnCurrency(accountBase.getAcctnCurrency());
                         info.setAcctnName(accountBase.getAcctnName());
+                        info.setParticipantCode(accountBase.getParticipantCode());
                         if (accountBase.getBalance() != null) {
                             info.setActual(accountBase.getBalance().getActual());
                         }
@@ -190,5 +190,30 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
         return response;
     }
 
+
+    @Override
+    public DisbursementInformationResponse disbursementInformation(CommonServiceRequest request, CustInfo cust){
+        DisbursementInformationResponse  response = new DisbursementInformationResponse();
+        ProcessContext context = loadContext(request, cust);
+        Validator.Result result;
+        try {
+            loanDisbursementInformation.execute(context);
+            logService.execute(context);
+            result = context.getResult();
+            response.setResult(result);
+            if (result.isOk()) {
+                CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
+                if (res.getDisbursementInformationResponse() != null) {
+                    response.setData(res.getDisbursementInformationResponse().getData());
+                }
+                response.setResult(context.getResult());
+            }
+        } catch (Exception e) {
+            log.error(e.toString());
+            context.setResult(Validator.Result.UNKNOWN);
+        }
+        return response;
+
+    }
 
 }

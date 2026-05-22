@@ -3,9 +3,7 @@ package com.mbc.mobileapp.api;
 import com.mbc.common.api.CallMicroService;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.util.Utility;
-import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
-import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanGetPdOutput;
-import com.mbc.mobileapp.api.model.digitalloan.output.PaymentHistoryOutPut;
+import com.mbc.mobileapp.api.model.digitalloan.output.*;
 import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanOfferLimitRequest;
 import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanOfferLimitResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -125,6 +123,42 @@ public class ApiMsLoan extends CallMicroService {
         }
     }
 
+
+    /**
+     * Gọi MS Loan API tính phí.
+     */
+    /**
+     * Gọi MS Loan API tính phí.
+     */
+    public ExecuteT24Output<LdFeeData> getLdFee(String custId, String requestId) {
+        String messageId = Utility.getUUID();
+
+        String channel ="SDK.RETAIL";
+        String product = "DIGITAL_LOAN";
+        String subProduct ="SALARY_ADVANCE";
+        String partnerCode ="EMONEY";
+
+        HttpHeaders headers = buildHeader(custId, requestId, messageId);
+        String url = getUrl("microservice.ms-loan.host") + getUrl("microservice.ms-loan.ld-fee");
+
+        LdFeeRequest requestBody = LdFeeRequest.builder()
+                .channel(channel)
+                .product(product)
+                .subProduct(subProduct)
+                .partnerCode(partnerCode)
+                .build();
+
+
+        ExecuteT24Output<LdFeeData> output = postForMicroService(
+                url,
+                headers,
+                requestBody,
+                new ParameterizedTypeReference<ExecuteT24Output<LdFeeData>>() {}
+        );
+
+        mappingErrorCode(output);
+        return output;
+    }
 
 
 }

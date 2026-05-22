@@ -5,6 +5,7 @@ import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
+import com.mbc.mobileapp.constant.MaritalStatus;
 import com.mbc.mobileapp.rest.digitalloan.getloan.SalaryAdvanceCreateRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
@@ -20,6 +21,7 @@ public class DoValidateSalaryAdvanceCreate implements Command {
 
     private static final String MSG_REQUEST_NULL                  = "Request null";
     private static final String MSG_MISSING_REQUIRED_FIELDS       = "Missing required fields";
+    private static final String MSG_INVALID_MARITAL_STATUS        = "Invalid marital status";
     private static final String MSG_MISSING_CAMBODIA_BIRTH_DETAIL = "Missing Cambodia place of birth details";
 
     @Override
@@ -37,7 +39,7 @@ public class DoValidateSalaryAdvanceCreate implements Command {
         }
 
         if (StringUtils.isBlank(req.getTransId())
-                || req.getMaritalStatus() == null
+                || StringUtils.isBlank(req.getMaritalStatus())
                 || StringUtils.isBlank(req.getPlaceOfBirth())
                 || StringUtils.isBlank(req.getCurrentAddressProvince())
                 || StringUtils.isBlank(req.getCurrentAddressDistrict())
@@ -46,6 +48,12 @@ public class DoValidateSalaryAdvanceCreate implements Command {
             log.error("[SalaryAdvanceValidate] {} - transId: {}", MSG_MISSING_REQUIRED_FIELDS, req.getTransId());
             context.setResult(new SimpleResult(MSG_MISSING_REQUIRED_FIELDS, false,
                     ResponseCode.TRANSACTION_FAIL.getCode()));
+            return true;
+        }
+
+        if (!MaritalStatus.isValid(req.getMaritalStatus())) {
+            log.error("[SalaryAdvanceValidate] {} - transId: {}, value: {}", MSG_INVALID_MARITAL_STATUS, req.getTransId(), req.getMaritalStatus());
+            context.setResult(new SimpleResult(MSG_INVALID_MARITAL_STATUS, false, ResponseCode.INVALID_INPUT.getCode()));
             return true;
         }
 

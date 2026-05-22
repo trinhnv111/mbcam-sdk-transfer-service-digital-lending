@@ -16,7 +16,8 @@ public class CustInfoOutput {
     private String englishName;
     private String phoneNumber;
     private String email;
-//    private String maritalStatus;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private String maritalStatus;
 
     private String currentCountry;
     private String currentProvince;
@@ -34,12 +35,20 @@ public class CustInfoOutput {
     private String placeOfBirth;
     private String employStartDate;
 
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthCountry;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthCountryName;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthProvince;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthProvinceName;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthDistrict;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthDistrictName;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthCommune;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     private String placeOfBirthCommuneName;
 }

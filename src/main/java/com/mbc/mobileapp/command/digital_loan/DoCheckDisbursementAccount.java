@@ -11,6 +11,7 @@ import com.mbc.common.util.Constant;
 import com.mbc.common.util.JSON;
 import com.mbc.common.validator.base.Validator.Result;
 import com.mbc.gateway.validator.result.SimpleResult;
+import com.mbc.common.api.ApiCustomer;
 import com.mbc.mobileapp.api.CallMsILService;
 import com.mbc.mobileapp.api.model.digitalloan.output.AccountCodeArr;
 import com.mbc.mobileapp.api.model.register.NonSavingAccount;
@@ -39,6 +40,7 @@ public class DoCheckDisbursementAccount implements Command {
     private final DoGetCustInfoFromEM doGetCustInfoFromEM;
     private final DoValidateSalaryCust doValidateSalaryCust;
     private final CallMsILService callMsILService;
+    private final ApiCustomer apiCustomer;
 
     @Override
     public boolean execute(Context context) throws Exception {
@@ -85,22 +87,20 @@ public class DoCheckDisbursementAccount implements Command {
 
                     NonSavingAcctInput inputMessage = new NonSavingAcctInput();
                     inputMessage.setCustomerId(custInfo.getHostCifId());
-                    inputMessage.setProcessingCode(new String[]{"0002"});
 
-                    // Gọi Microservice IL lấy danh sách tài khoản thanh toán
-                    ExecuteT24Output<List<AccountCodeArr>> iLResponse = callMsILService.getSavingAccountListV2(inputMessage, custInfo.getId(), request.getRequestId());
+                    ExecuteT24Output<List<AccountBase>> iLResponse = apiCustomer.getNonSavingAccountListOtherSalary(inputMessage, custInfo.getId(), request.getRequestId());
 
                     // cờ kiểm tra
                     boolean hasValidAccount = false;
-                    List<AccountCodeArr> validAccountList = new ArrayList<>();
+                    List<AccountBase> validAccountList = new ArrayList<>();
 
                     if (iLResponse != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(iLResponse.getStatus())) {
-                        List<AccountCodeArr> accountList = iLResponse.getData();
+                        List<AccountBase> accountList = iLResponse.getData();
 
                         if (accountList != null && !accountList.isEmpty()) {
                             log.info("[DoCheckDisbursementAccount] Lấy danh sách tài khoản thành công, số lượng: {}", accountList.size());
 
-                            for (AccountCodeArr arr : accountList) {
+                            for (AccountBase arr : accountList) {
                                 // 1. Kiểm tra Currency (Phải trùng với khoản vay)
                                 if (!currency.equalsIgnoreCase(arr.getAcctnCurrency())) {
                                     log.info("[DoCheckDisbursementAccount] Tài khoản {} bỏ qua vì lệch Currency: {}", arr.getAcctId(), arr.getAcctnCurrency());
@@ -148,21 +148,7 @@ public class DoCheckDisbursementAccount implements Command {
 
                     if (hasValidAccount) {
                         log.info("[DoCheckDisbursementAccount] Thỏa mãn điều kiện (Có {} TK hợp lệ) -> Chuyển sang BƯỚC 8", validAccountList.size());
-                        List<AccountBase> responseList = new ArrayList<>();
-                        for (AccountCodeArr arr : validAccountList) {
-                            AccountBase accountBase = new AccountBase();
-                            accountBase.setAcctId(arr.getAcctId());
-                            accountBase.setAcctnCurrency(arr.getAcctnCurrency());
-                            accountBase.setAcctnName(arr.getAcctnName());
-                            if (arr.getBalance() != null) {
-                                accountBase.setBalance(arr.getBalance());
-                            }
-                            if (arr.getRelationshipManager() != null && !arr.getRelationshipManager().isEmpty()) {
-                                accountBase.setRelationshipManager(arr.getRelationshipManager());
-                            }
-                            responseList.add(accountBase);
-                        }
-                        response.setLstNonSavingAccount(responseList);
+                        response.setLstNonSavingAccount(validAccountList);
                         result = Result.OK;
                     } else {
                         log.info("[DoCheckDisbursementAccount] Không có tài khoản nào thỏa mãn -> (Mở tài khoản tự động)");

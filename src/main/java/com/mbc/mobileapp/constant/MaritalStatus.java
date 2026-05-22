@@ -6,18 +6,20 @@ import lombok.Getter;
 @Getter
 
 public enum MaritalStatus  {
-    DIVORCED("Divorced"),
-    MARRIED("Married"),
-    PARTNER("Partner"),
-    SINGLE("Single"),
-    WIDOW_WIDOWER("Widow/Widower"),
-    SEPARATED("Separated"),
-    OTHER("Other");
+    DIVORCED("Divorced", "D"),
+    MARRIED("Married", "M"),
+    PARTNER("Partner", "P"),
+    SINGLE("Single", "S"),
+    WIDOW_WIDOWER("Widow/Widower", "W"),
+    SEPARATED("Separated", "SE"),
+    OTHER("Other", "O");
 
     private final String value;
+    private final String code;
 
-    MaritalStatus(String value) {
+    MaritalStatus(String value, String code) {
         this.value = value;
+        this.code = code;
     }
 
     @JsonCreator
@@ -29,5 +31,49 @@ public enum MaritalStatus  {
             }
         }
         throw new IllegalArgumentException("Invalid maritalStatus: " + input);
+    }
+
+
+    public static String toCode(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return null;
+        }
+        for (MaritalStatus status : values()) {
+            if (status.value.equalsIgnoreCase(input)
+                    || status.name().equalsIgnoreCase(input)) {
+                return status.code;
+            }
+        }
+        return input;
+    }
+
+
+    public static String fromCode(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return input;
+        }
+        for (MaritalStatus status : values()) {
+            if (status.code.equalsIgnoreCase(input)
+                    || status.value.equalsIgnoreCase(input)
+                    || status.name().equalsIgnoreCase(input)) {
+                return status.value;
+            }
+        }
+        return input;
+    }
+
+
+    public static boolean isValid(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return false;
+        }
+        for (MaritalStatus status : values()) {
+            if (status.code.equalsIgnoreCase(input)
+                    || status.value.equalsIgnoreCase(input)
+                    || status.name().equalsIgnoreCase(input)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

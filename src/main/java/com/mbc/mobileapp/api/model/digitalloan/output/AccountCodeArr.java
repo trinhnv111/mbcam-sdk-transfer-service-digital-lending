@@ -47,4 +47,5 @@ public class AccountCodeArr {
     private String transRef;
     private String limitRef;
     private String jointAccountType;
+    private String participantCode;
 }

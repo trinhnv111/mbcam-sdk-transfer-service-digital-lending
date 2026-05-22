@@ -10,10 +10,7 @@ import com.mbc.common.util.JSON;
 import com.mbc.common.validator.base.Validator.Result;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementResponse;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.*;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
 
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
@@ -363,6 +360,52 @@ public class DigitalLoanController extends BaseController {
         return resp;
     }
 
+    @ApiOperation("Api Get Fee - Get Information ")
+    @PostMapping("/get-confirm")
+    public DisbursementInformationResponse disbursementInformation(@RequestBody @Valid DisbursementInformationRequest param, HttpServletRequest requestClient) {
+        DisbursementInformationResponse resp = new DisbursementInformationResponse();
+        Result result = null;
+        // if (dynKeyEnabled) {
+        // DynamicKeyResponse<GetLoanInfoRequest> dynResponse = dynDecryptData1(dynRequest, GetLoanInfoRequest.class);
+        // dynRequest = dynResponse.getData();
+        //
+        // if (param == null) {
+        // result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false,
+        // ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
+        // resp.setResult(result);
+        //
+        // }
+        // } else {
+        // param = mapDataRequestBody(dynRequest.getDataEncrypt(), TransferToWalletRequest.class);
+        // if (param == null) {
+        // result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false,
+        // ResponseCode.INVALID_INPUT.getCode());
+        // resp.setResult(result);
+        // }
+        // }
+        log.info("[LOAN DISBURSEMENT] input data: {}", JSON.stringify(param));
+        // validation
+        result = validate(param);
+        if (!result.isOk()) {
+            resp.setResult(result);
+        } else {
+            CommonServiceRequest request = new CommonServiceRequest();
+            CustInfo cust = getCustFromSession(param.getSessionId());
+            if (cust != null) {
+                // Common param
+                request = (CommonServiceRequest) setBase(request, param);
+                Principal principal = requestClient.getUserPrincipal();
+                request.setPartnerId(principal.getName());
+                request.setDigitalLoanRequest(param);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
+                request.setTransId(param.getTransId());
+                resp = digitalLoanService.disbursementInformation(request, cust);
 
+            }
+        }
+        resp.setRefNo(param.getRefNo());
+        log.info("[LOAN DISBURSEMENT] out data: {}", JSON.stringify(resp));
+        return resp;
+    }
 
 }

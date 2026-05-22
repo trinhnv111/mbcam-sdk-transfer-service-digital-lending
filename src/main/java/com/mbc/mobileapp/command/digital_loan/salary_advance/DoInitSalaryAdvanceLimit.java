@@ -97,6 +97,8 @@ public class DoInitSalaryAdvanceLimit implements Command {
                         tempRecord.setPhoneNumber(custT24.getContactInfo().getPhone().get(0).getPhoneNo());
                     }
                 }
+
+                tempRecord.setPlaceOfBirth(custT24.getResidence());
             }
 
             if (Utility.isNull(tempRecord.getPhoneNumber())) {
@@ -122,6 +124,8 @@ public class DoInitSalaryAdvanceLimit implements Command {
             tempRecord.setLoanType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE);
             tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
+
+
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
 
