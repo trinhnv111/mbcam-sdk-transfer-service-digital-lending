@@ -62,12 +62,12 @@ public class DoGetLoan implements Command {
                         log.info("[DoGetLoan] LD list is empty, injecting mock data...");
                         com.mbc.mobileapp.api.model.digitalloan.output.LdItem mockLd = new com.mbc.mobileapp.api.model.digitalloan.output.LdItem();
                         mockLd.setLdId("LD2316093070");
-                        mockLd.setAmount(new BigDecimal("302430.1"));
+                        mockLd.setAmount(new java.math.BigDecimal("302430.1"));
                         mockLd.setMaturityDate("2026-06-09");
                         mockLd.setCurrency("USD");
                         mockLd.setValueDate("2023-06-09");
                         mockLd.setBranchCode("KH0010001");
-                        mockLd.setTotalRepayPrinAmt(new BigDecimal("2197569.9"));
+                        mockLd.setTotalRepayPrinAmt(new java.math.BigDecimal("2197569.9"));
                         mockLd.setPartner("MBC");
                         mockLd.setChannel("");
                         mockLd.setAmountHits(new BigDecimal("802430.1"));

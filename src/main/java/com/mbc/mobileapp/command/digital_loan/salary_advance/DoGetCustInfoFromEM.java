@@ -98,10 +98,32 @@ public class DoGetCustInfoFromEM implements Command {
                         emResponse.getCode(), emResponse.getMessage());
 
 
-                ResponseCode errorCode = ResponseCode.valueOfErrorCode(emResponse.getCode());
-                if (errorCode == null) {
-                    errorCode = ResponseCode.SA_GENERAL_ERROR;
+                ResponseCode errorCode;
+
+                String emCode = emResponse.getCode();
+                String emMsg = emResponse.getMessage() != null ? emResponse.getMessage() : "";
+
+                // Map specific eMoney errors to MBC Response Codes
+                if ("ERR_NOT_RECEIVE_SALARY_6M".equals(emCode)
+                        || emMsg.contains("Customer does not receive salary")) {
+                    errorCode = ResponseCode.SA_CREDIT_REJECTED;
+                } else if ("ERR_CUSTOMER_WRONG_INFOR".equals(emCode)) {
+                    errorCode = ResponseCode.SA_ID_MISMATCH;
                 }
+                else if ("ERR_CUSTOMER_INACTIVE".equals(emCode)){
+                    errorCode = ResponseCode.SA_CREDIT_REJECTED;
+                }
+                else if ("ERR_CUSTOMER_NOT_FOUND".equals(emCode)) {
+                    errorCode = ResponseCode.SA_CREDIT_REJECTED;
+                }
+
+                else {
+                    errorCode = ResponseCode.valueOfErrorCode(emCode);
+                    if (errorCode == null) {
+                        errorCode = ResponseCode.SA_GENERAL_ERROR;
+                    }
+                }
+
                 result = new SimpleResult(errorCode.getDesc(), false, errorCode.getCode());
                 processContext.setResult(result);
                 return true;

@@ -14,7 +14,7 @@ import java.util.Date;
 public class SaLimitData {
     private BigDecimal approveLimit;
     private BigDecimal usedLimit;
-    private BigDecimal remaining;
+    private BigDecimal remainingLimit;
     private String currency;
 //    private Boolean isDisabilities;
 //    private String startDate;

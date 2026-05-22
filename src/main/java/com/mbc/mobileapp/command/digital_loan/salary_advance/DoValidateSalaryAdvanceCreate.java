@@ -37,14 +37,15 @@ public class DoValidateSalaryAdvanceCreate implements Command {
         }
 
         if (StringUtils.isBlank(req.getTransId())
-                || StringUtils.isBlank(req.getMaritalStatus())
+                || req.getMaritalStatus() == null
                 || StringUtils.isBlank(req.getPlaceOfBirth())
                 || StringUtils.isBlank(req.getCurrentAddressProvince())
                 || StringUtils.isBlank(req.getCurrentAddressDistrict())
                 || StringUtils.isBlank(req.getCurrentAddressWard())) {
 
             log.error("[SalaryAdvanceValidate] {} - transId: {}", MSG_MISSING_REQUIRED_FIELDS, req.getTransId());
-            context.setResult(new SimpleResult(MSG_MISSING_REQUIRED_FIELDS, false, ResponseCode.TRANSACTION_FAIL.getCode()));
+            context.setResult(new SimpleResult(MSG_MISSING_REQUIRED_FIELDS, false,
+                    ResponseCode.TRANSACTION_FAIL.getCode()));
             return true;
         }
 

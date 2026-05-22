@@ -82,17 +82,17 @@ public class ApiEMoney extends CallApiGee {
             }
 
             String errorCode = response.getErrorCode();
-            if (errorCode != null && !errorCode.isEmpty() && !"00".equals(errorCode) && !"0".equals(errorCode)) {
-                AppLog.error("[API-EMONEY] customer/info Apigee error - requestId:" + requestId
-                        + ", errorCode:" + errorCode
-                        + ", errorDesc:" + response.getErrorDesc(), null);
-                return new ExcuteEmoney<>(500, errorCode, String.valueOf(response.getErrorDesc()), null);
-//                return new ExcuteEmoney<>(500, errorCode,  ResponseCode.SA_NOT_ELIGIBLE.getDesc(), null);
-            }
-            // Apigee wraps eMoney response inside response.data:
-            // response.data = { "status":0, "code":"MSG_SUCCESS", "message":"Success",
-            //                   "data": { salaryInfo:{...}, customerInfo:{...} } }
             JsonNode outerData = response.getData();
+
+            if (errorCode != null && !errorCode.isEmpty() && !"00".equals(errorCode) && !"0".equals(errorCode)) {
+                if (outerData == null) {
+                    AppLog.error("[API-EMONEY] customer/info Apigee error - requestId:" + requestId
+                            + ", errorCode:" + errorCode
+                            + ", errorDesc:" + response.getErrorDesc(), null);
+                    return new ExcuteEmoney<>(500, errorCode, String.valueOf(response.getErrorDesc()), null);
+                }
+            }
+
             if (outerData == null) {
                 AppLog.error("[API-EMONEY] customer/info outer data null - requestId:" + requestId, null);
                 return new ExcuteEmoney<>(500, "DATA_NULL", "Apigee outer data is null", null);

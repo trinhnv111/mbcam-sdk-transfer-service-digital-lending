@@ -43,7 +43,7 @@ public class DoGetCustInfroFromMSCust implements Command {
             CustomerInfoInput customerInfoInput = new CustomerInfoInput();
             customerInfoInput.setCustomerId(custInfo.getHostCifId());
 
-            ExecuteT24Output<CustomerInfoT24> customerInfoT24 = apiCustormer.
+                ExecuteT24Output<CustomerInfoT24> customerInfoT24 = apiCustormer.
                     getCustomerInfo(customerInfoInput, custInfo.getId(), commonServiceRequest.getRequestId());
 
             if (Objects.nonNull(customerInfoT24) && Constant.CALL_MICROSERVICE_SUCCESS.equals(customerInfoT24.getStatus())) {

@@ -78,7 +78,7 @@ public class DoInitSalaryAdvanceLimit implements Command {
 
             // Thông tin KH
             if (custT24 != null) {
-                tempRecord.setFullName(custT24.getCustomerName().getEngName());
+                tempRecord.setFullName(custT24.getCustomerName().getVnName());
                 tempRecord.setGender(custT24.getGender());
                 tempRecord.setNationality(custT24.getNationality());
                 tempRecord.setOccupation(custT24.getOccupation());
@@ -90,6 +90,17 @@ public class DoInitSalaryAdvanceLimit implements Command {
                         AppLog.warning("[SA INIT] Cannot parse dateOfBirth: " + emCustInfo.getDateOfBirth());
                     }
                 }
+
+                // Get phone from MSCust if available
+                if (custT24.getContactInfo() != null && !Utility.isNull(custT24.getContactInfo().getPhone().get(0).getPhoneNo())) {
+                    if (!custT24.getContactInfo().getPhone().get(0).getPhoneNo().isEmpty()) {
+                        tempRecord.setPhoneNumber(custT24.getContactInfo().getPhone().get(0).getPhoneNo());
+                    }
+                }
+            }
+
+            if (Utility.isNull(tempRecord.getPhoneNumber())) {
+                tempRecord.setPhoneNumber(custInfo.getPhoneNo());
             }
 
             tempRecord.setNationalId(custInfo.getIdTypNo());

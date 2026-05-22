@@ -93,19 +93,6 @@ public class DoValidateSalaryCust implements Command {
 
             }
 
-            // 3. Check lương liên tục 6 tháng (từ salaryInfo)
-            if (Objects.isNull(emSalaryInfo)
-                    || Boolean.FALSE.equals(emSalaryInfo.getContinuousSalary6Months())
-                    || Objects.isNull(emSalaryInfo.getSalary3mAvgUSD())
-                    || emSalaryInfo.getSalary3mAvgUSD().signum() <= 0) {
-                log.error("[SA INIT - VALIDATE] Salary invalid: continuousSalary6Months={}, salary3mAvgUSD={}",
-                        emSalaryInfo != null ? emSalaryInfo.getContinuousSalary6Months() : null,
-                        emSalaryInfo != null ? emSalaryInfo.getSalary3mAvgUSD() : null);
-                result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
-                processContext.setResult(result);
-                return true;
-            }
-
             log.info("[SA INIT - VALIDATE] Passed - requestId:{}", request.getRequestId());
 //            return true;
 

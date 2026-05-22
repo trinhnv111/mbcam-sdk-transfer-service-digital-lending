@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 
+// call em -> validate -> call aml (validate)-> call msCustomer(response data)
+
 @Service
 @RequiredArgsConstructor
 public class SalaryAdvanceInitService extends ChainBase {
@@ -28,9 +30,9 @@ public class SalaryAdvanceInitService extends ChainBase {
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
         addCommand(doGetCustInfoFromEM);
+        addCommand(doGetCustInfroFromMSCust);
         addCommand(doValidateSalaryCust);
         addCommand(doChecAMLSalaryAdvance);
-        addCommand(doGetCustInfroFromMSCust);
         addCommand(doInitSalaryAdvanceLimit);
     }
 }

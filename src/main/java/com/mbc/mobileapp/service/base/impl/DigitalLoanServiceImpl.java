@@ -141,7 +141,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
                 CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
                 response.setTransId(res.getTransId());
 
-                // ĐOẠN MAP DỮ LIỆU MỚI (Thay cho dòng lỗi của bạn)
+
                 if (res.getLstNonSavingAccount() != null) {
                     List<ValidDisbursementResponse.DisbursementAccountInfo> accountInfos = new ArrayList<>();
                     for (com.mbc.common.services.il.nonsavingacct.AccountBase accountBase : res.getLstNonSavingAccount()) {

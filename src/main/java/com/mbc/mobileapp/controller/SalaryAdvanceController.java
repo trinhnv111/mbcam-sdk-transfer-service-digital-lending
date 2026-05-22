@@ -41,7 +41,7 @@ public class SalaryAdvanceController extends BaseController {
 
     @ApiOperation("API get digital loans limit")
     @PostMapping("/offer-limit")
-    public GetSaLimitResponse getSaLimitResponse(@RequestBody GetSaLimitRequest param, HttpServletRequest requestClient) {
+    public GetSaLimitResponse getLimit(@RequestBody GetSaLimitRequest param, HttpServletRequest requestClient) {
         GetSaLimitResponse resp = new GetSaLimitResponse();
         com.mbc.common.validator.base.Validator.Result result = null;
 //        GetSaLimitRequest param;
@@ -75,7 +75,8 @@ public class SalaryAdvanceController extends BaseController {
 //                param.setHostCifId(custInfo.getHostCifId());
                 String hostCif = custInfo.getHostCifId();
                 if (Utility.isNull(hostCif)) {
-                    result = new SimpleResult("CUSTOMER HOSTCIF is invalid", false, ResponseCode.INVALID_INPUT.getCode());
+                    result = new SimpleResult("CUSTOMER HOST CIF is invalid", false, ResponseCode.INVALID_INPUT.getCode());
+                    resp.setResult(result);
                 }
                 // param common
                 commonServiceRequest = (CommonServiceRequest) setBase(commonServiceRequest, param);
@@ -96,7 +97,7 @@ public class SalaryAdvanceController extends BaseController {
 
     @ApiOperation("Api init salary advance")
     @PostMapping("/init")
-    public SalaryAdvanceInitResponse getLoan(@RequestBody SalaryAdvanceInitRequest param, HttpServletRequest requestClient) {
+    public SalaryAdvanceInitResponse init(@RequestBody SalaryAdvanceInitRequest param, HttpServletRequest requestClient) {
         SalaryAdvanceInitResponse resp = new SalaryAdvanceInitResponse();
         com.mbc.common.validator.base.Validator.Result result;
 //        SalaryAdvanceInitRequest param;

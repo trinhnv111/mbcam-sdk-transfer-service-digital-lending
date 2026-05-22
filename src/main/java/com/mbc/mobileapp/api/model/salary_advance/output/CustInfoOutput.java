@@ -5,23 +5,41 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Thông tin khách hàng trả về trong API init Salary Advance.
- * Chỉ bao gồm các trường thực sự được populate từ mscustomer.
- * Các trường form (email, maritalStatus, address...) FE tự nhập
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CustInfoOutput {
 
-    /** Fullname  */
-    private String fullName;
-
-    /** ID Number  */
     private String idNumber;
-
-    /** Phone Number */
+    private String englishName;
     private String phoneNumber;
+    private String email;
+//    private String maritalStatus;
+
+    private String currentCountry;
+    private String currentProvince;
+    private String currentProvinceName;
+    private String currentDistrict;
+    private String currentDistrictName;
+    private String currentCommune;
+    private String currentCommuneName;
+
+    private String residentialCountry;
+    private String residentialProvince;
+    private String residentialDistrict;
+    private String residentialCommune;
+
+    private String placeOfBirth;
+    private String employStartDate;
+
+    private String placeOfBirthCountry;
+    private String placeOfBirthCountryName;
+    private String placeOfBirthProvince;
+    private String placeOfBirthProvinceName;
+    private String placeOfBirthDistrict;
+    private String placeOfBirthDistrictName;
+    private String placeOfBirthCommune;
+    private String placeOfBirthCommuneName;
 }

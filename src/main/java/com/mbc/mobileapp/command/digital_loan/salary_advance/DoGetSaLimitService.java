@@ -68,11 +68,11 @@ public class DoGetSaLimitService implements Command {
         SaLimitData limitData = new SaLimitData();
 
         if (comTransDtlLmt != null) {
-            BigDecimal approveLimit = comTransDtlLmt.getApproveLimit() != null ? comTransDtlLmt.getApproveLimit() : BigDecimal.ZERO;
+            BigDecimal approveLimit = comTransDtlLmt.getRefer_limit_amount() != null ? comTransDtlLmt.getRefer_limit_amount() : BigDecimal.ZERO;
             BigDecimal usedLimit = comTransDtlLmt.getUsedLimit() != null ? comTransDtlLmt.getUsedLimit() : BigDecimal.ZERO;
-            limitData.setApproveLimit(comTransDtlLmt.getApproveLimit());
+            limitData.setApproveLimit(comTransDtlLmt.getRefer_limit_amount());
             limitData.setUsedLimit(usedLimit);
-            limitData.setRemaining(approveLimit.subtract(usedLimit));
+            limitData.setRemainingLimit(approveLimit.subtract(usedLimit));
             limitData.setCurrency(comTransDtlLmt.getCurrency());
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 //            if (comTransDtlLmt.getStartDate() != null) {
@@ -85,7 +85,7 @@ public class DoGetSaLimitService implements Command {
             // Chưa đăng ký hạn mức → trả về 0
             limitData.setApproveLimit(BigDecimal.ZERO);
             limitData.setUsedLimit(BigDecimal.ZERO);
-            limitData.setRemaining(BigDecimal.ZERO);
+            limitData.setRemainingLimit(BigDecimal.ZERO);
             limitData.setCurrency(null);
         }
         return limitData;

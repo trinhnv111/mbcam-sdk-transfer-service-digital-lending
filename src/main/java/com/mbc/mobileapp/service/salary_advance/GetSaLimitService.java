@@ -25,8 +25,5 @@ public class GetSaLimitService extends ChainBase {
         addCommand(checkCustomerState);
         addCommand(doCheckSrvc);
         addCommand(doGetSaLimitService);
-
     }
-
-
 }

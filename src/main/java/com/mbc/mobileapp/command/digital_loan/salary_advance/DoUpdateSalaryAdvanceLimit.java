@@ -25,6 +25,8 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @Slf4j
@@ -64,10 +66,17 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 ComTransDtlLmt tempRecord = tempRecordOpt.get();
                 SimpleDateFormat sdf = new SimpleDateFormat(SalaryAdvanceConstant.DATE_FORMAT);
 
-                tempRecord.setMaritalStatus(req.getMaritalStatus());
+                tempRecord.setMaritalStatus(String.valueOf(req.getMaritalStatus()));
                 tempRecord.setAddressProvince(req.getCurrentAddressProvince());
                 tempRecord.setAddressDistrict(req.getCurrentAddressDistrict());
+                LocalDate localDate = LocalDate.parse(
+                        req.getEmploymentStartDate(),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                );
+
+                tempRecord.setEmploymentStartDate(java.sql.Date.valueOf(localDate));
                 tempRecord.setAddressWard(req.getCurrentAddressWard());
+
 
                 tempRecord.setPlaceOfBirth(req.getPlaceOfBirth());
                 tempRecord.setPlaceOfBirthProvince(req.getPlaceOfBirthProvince());
@@ -90,20 +99,22 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
                 tempRecord.setStep(SalaryAdvanceConstant.STEP_CREATE_LOAN);
                 tempRecord.setStatus(Constant.STATUS_SUCCESS);
 
+
                 // Limit từ MS Loan
                 Object saLimit = context.get("sa_limit");
                 if (saLimit instanceof BigDecimal) {
-                    tempRecord.setLoanLimit((BigDecimal) saLimit);
-                    tempRecord.setApproveLimit((BigDecimal) saLimit);
+                    tempRecord.setRefer_limit_amount((BigDecimal) saLimit);
+
                 } else if (saLimit instanceof Double) {
-                    tempRecord.setLoanLimit(BigDecimal.valueOf((Double) saLimit));
-                    tempRecord.setApproveLimit(BigDecimal.valueOf((Double) saLimit));
+                    tempRecord.setRefer_limit_amount((BigDecimal) saLimit);
                 }
 
                 String saLimitCurrency = (String) context.get("sa_currency");
                 if (!Utility.isNull(saLimitCurrency)) {
                     tempRecord.setCurrency(saLimitCurrency);
                 }
+
+
 
                 // Ngày hiệu lực / hết hạn limit từ MS Loan
                 String limitValueDate = (String) context.get("sa_limit_value_date");
@@ -131,6 +142,14 @@ public class DoUpdateSalaryAdvanceLimit implements Command {
 
                 tempRecord.setLimitValueDate(startDate);
                 tempRecord.setLimitEndDate(endDate);
+                // useLimit là nul
+                BigDecimal usedLimit = Optional.ofNullable(tempRecord.getUsedLimit())
+                        .orElse(BigDecimal.ZERO);
+
+                tempRecord.setRemaining(
+                        tempRecord.getRefer_limit_amount().subtract(usedLimit)
+                );
+
 
 
                 comTransDtlLmtRepo.saveAndFlush(tempRecord);

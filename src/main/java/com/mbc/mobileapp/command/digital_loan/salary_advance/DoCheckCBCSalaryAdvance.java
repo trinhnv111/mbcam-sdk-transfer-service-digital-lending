@@ -87,7 +87,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
                         request.getRequestId());
                 result = new SimpleResult(ResponseCode.SA_CREDIT_REJECTED.getDesc(), false, ResponseCode.SA_CREDIT_REJECTED.getCode());
                 context.setResult(result);
-                return false; // end luồng
+                return false;
             }
 
             String history = historyOneYear.toLowerCase().trim();
