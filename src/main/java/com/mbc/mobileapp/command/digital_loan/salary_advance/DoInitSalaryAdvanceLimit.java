@@ -125,7 +125,10 @@ public class DoInitSalaryAdvanceLimit implements Command {
             tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
 
-
+            // Lưu emCustomerId từ eMoney response
+            if (emCustInfo != null && !Utility.isNull(emCustInfo.getCustomerId())) {
+                tempRecord.setEmCustomerId(emCustInfo.getCustomerId());
+            }
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
 
