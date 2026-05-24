@@ -20,6 +20,7 @@ import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.constant.ServiceConstant;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
@@ -187,7 +188,13 @@ public class DoDisbursement implements Command {
                 // Build DisbursementSuccessData cho Success screen (Figma)
                 try {
                     String ldId = (String) context.get("ld_id");
-                    ComTransDtlLmt lmt = comTransDtlLmtRepository.findById(request.getTransId()).orElse(null);
+                    // Load lmt theo hostCifId — KHÔNG dùng request.getTransId() vì transId ở bước
+                    // disbursement là ID của ComTrans giải ngân, không phải ID của ComTransDtlLmt
+                    ComTransDtlLmt lmt = comTransDtlLmtRepository
+                            .findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
+                                    custInfo.getHostCifId(),
+                                    SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
+                                    Constant.STATUS_SUCCESS);
                     String dueDateStr = null;
                     java.math.BigDecimal feeAmount = java.math.BigDecimal.ZERO;
                     if (lmt != null) {
