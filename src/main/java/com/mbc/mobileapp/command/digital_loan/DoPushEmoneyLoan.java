@@ -104,11 +104,21 @@ public class DoPushEmoneyLoan implements Command {
                 encrypt = "";
             }
 
+            // Format amount dạng thập phân 2 chữ số (VD: "500.00") theo spec eMoney
+            String formattedAmount;
+            try {
+                formattedAmount = new java.math.BigDecimal(disbReq.getDisburseAmount())
+                        .setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+            } catch (Exception fmtEx) {
+                log.warn("[DoPushEmoneyLoan] Amount format failed, using raw value - requestId:{}", request.getRequestId());
+                formattedAmount = disbReq.getDisburseAmount();
+            }
+
             EmLoanDisbursementRequest emReq = EmLoanDisbursementRequest.builder()
                     .MBCLoanId(ldId)
                     .encrypt(encrypt)
                     .customerId(emCustomerId)
-                    .amount(disbReq.getDisburseAmount())
+                    .amount(formattedAmount)
                     .currency(currency != null ? currency : "USD")
                     .disbursementDate(disbursementDate)
                     .dueDate(dueDate)
