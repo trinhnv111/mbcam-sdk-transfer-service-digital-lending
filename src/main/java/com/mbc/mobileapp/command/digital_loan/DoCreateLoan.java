@@ -2,9 +2,11 @@ package com.mbc.mobileapp.command.digital_loan;
 
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
+import com.mbc.common.entity.ComTransDtlLoanDisbursement;
 import com.mbc.common.entity.ComTransDtlLoanRegistration;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.object.CustInfo;
+import com.mbc.common.repository.ComTransDtlLoanDisbursementRepo;
 import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.Utility;
@@ -22,6 +24,7 @@ import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -45,6 +48,7 @@ public class DoCreateLoan implements Command {
 
     private final ApiMsLoan apiMsLoan;
     private final ComTransDtlLoanRegistrationRepo registrationRepo;
+    private final ComTransDtlLoanDisbursementRepo disbursementRepo;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -132,6 +136,36 @@ public class DoCreateLoan implements Command {
             registration.setLdId(createOut.getLdId());
             registration.setStep("CREATE_LOAN");
             registrationRepo.save(registration);
+
+            // ── Tạo ComTransDtlLoanDisbursement ──────────────────────────
+            // Record này bắt buộc phải tồn tại trước khi DoDisbursement chạy
+            // id = registrationId (cùng PK với ComTrans disbursement)
+            String currency = createOut.getCurrency() != null
+                    ? createOut.getCurrency()
+                    : (disbReq.getCurrency() != null ? disbReq.getCurrency() : registration.getAccountCurrency());
+            BigDecimal amount = disbReq.getDisburseAmount() != null
+                    ? new java.math.BigDecimal(disbReq.getDisburseAmount()) : java.math.BigDecimal.ZERO;
+
+            ComTransDtlLoanDisbursement dtl = ComTransDtlLoanDisbursement.builder()
+                    .id(registrationId)                                // PK = registration id
+                    .custId(custInfo.getId())
+                    .status(Constant.COM_STATUS_INT)
+                    .debitAcctNo(createOut.getDrawdownAccount())      // working account (nguồn tiền)
+                    .debitAcctCcy(currency)
+                    .debitAmount(amount)
+                    .crebitAcctNo(disbReq.getSelectedAccountNumber()) // TK đích của KH
+                    .crebitAcctName(disbReq.getSelectedAccountName())
+                    .crebitAcctCcy(currency)
+                    .crebitAmount(amount)
+                    .amount(amount)
+                    .currency(currency)
+                    .transferType(disbReq.getDisbursementType())      // MBC_ACCOUNT | EMONEY_WALLET
+                    .productType("SALARY_ADVANCE")
+                    .transactionDate(new java.util.Date())
+                    .build();
+            disbursementRepo.saveAndFlush(dtl);
+            log.info("[DoCreateLoan] Saved DtlLoanDisbursement - id:{}", registrationId);
+
 
             log.info("[DoCreateLoan] SUCCESS - ldId:{}, drawdownAccount:{}, requestId:{}",
                     createOut.getLdId(), createOut.getDrawdownAccount(), request.getRequestId());
