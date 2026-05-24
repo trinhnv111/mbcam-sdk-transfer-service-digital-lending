@@ -4,10 +4,12 @@ import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.entity.ComTransDtlLoanDisbursement;
 import com.mbc.common.entity.ComTransDtlLoanRegistration;
+import com.mbc.common.entity.ComTransDtlLmt;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLoanDisbursementRepo;
 import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
+import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
@@ -25,8 +27,6 @@ import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Step: Hạch toán Core — Gọi MS Loan createLoan → T24 mở LD account
@@ -49,6 +49,7 @@ public class DoCreateLoan implements Command {
     private final ApiMsLoan apiMsLoan;
     private final ComTransDtlLoanRegistrationRepo registrationRepo;
     private final ComTransDtlLoanDisbursementRepo disbursementRepo;
+    private final ComTransDtlLmtRepository comTransDtlLmtRepository;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -74,26 +75,58 @@ public class DoCreateLoan implements Command {
                 return !result.isOk();
             }
 
-            // Tính ngày đáo hạn khoản vay (từ limitEndDate đã lưu trong registration)
-            String dueDate = registration.getLoanDueDate() != null
-                    ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(registration.getLoanDueDate())
-                    : LocalDate.now().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            // Load LMT để lấy thông tin KH cần cho MS Loan API
+            ComTransDtlLmt lmt = comTransDtlLmtRepository
+                    .findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
+                            custInfo.getHostCifId(),
+                            SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
+                            Constant.STATUS_SUCCESS);
+            if (lmt == null) {
+                log.error("[DoCreateLoan] LMT not found - hostCifId:{}", custInfo.getHostCifId());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return !result.isOk();
+            }
+
+            // Format ngày theo API spec
+            java.text.SimpleDateFormat sdfApi = new java.text.SimpleDateFormat("yyyyMMdd");
+            java.text.SimpleDateFormat sdfDisplay = new java.text.SimpleDateFormat("dd/MM/yyyy");
+            String valueDateStr = sdfApi.format(new java.util.Date()); // ngày hiệu lực = hôm nay
+            String maturityDateStr = lmt.getEndDate() != null
+                    ? sdfApi.format(lmt.getEndDate())
+                    : sdfApi.format(new java.util.Date());
+            String employmentDateStr = lmt.getEmploymentStartDate() != null
+                    ? sdfDisplay.format(lmt.getEmploymentStartDate()) : "";
+
+            String loanCurrency = disbReq.getCurrency() != null
+                    ? disbReq.getCurrency() : registration.getAccountCurrency();
 
             MsLoanCreateRequest msRequest = MsLoanCreateRequest.builder()
+                    // Thông tin KH
                     .customerCode(custInfo.getHostCifId())
-                    .loanAmount(disbReq.getDisburseAmount())
-                    .loanCurrency(disbReq.getCurrency() != null ? disbReq.getCurrency() : registration.getAccountCurrency())
-                    .loanDueDate(dueDate)
-                    .disbursementAccount(disbReq.getSelectedAccountNumber())
-                    .docIdEng(registration.getDocIdEng())
-                    .channel("SDK")
+                    .customerName(lmt.getFullName())
+                    .rmCode(lmt.getRmCode())
+                    .phoneNumber(custInfo.getPhoneNo())
+                    .occupation(lmt.getOccupation())
+                    .selfEmployment("N") // TODO: lấy từ data thực nếu có
+                    .employmentDate(employmentDateStr)
+                    .monthlySalary(lmt.getMonthlyIncome())
+                    .salaryCurrency(lmt.getCurrency())
+                    // Thông tin khoản vay
+                    .loanAmount(registration.getLoanAmount())
+                    .loanCurrency(loanCurrency)
+                    .loanInterest(lmt.getInterestRate())
+                    .valueDate(valueDateStr)
+                    .maturityDate(maturityDateStr)
+                    .channel("SDK.RETAIL")
                     .product("DIGITAL_LOAN")
                     .subProduct("SALARY_ADVANCE")
                     .partnerCode("EMONEY")
                     .build();
 
             log.info("[DoCreateLoan] Calling MS Loan createLoan - requestId:{}, customerCode:{}, amount:{}",
-                    request.getRequestId(), custInfo.getHostCifId(), disbReq.getDisburseAmount());
+                    request.getRequestId(), custInfo.getHostCifId(), registration.getLoanAmount());
 
             ExecuteT24Output<MsLoanCreateOutput> output = apiMsLoan.createLoan(
                     msRequest, custInfo.getId(), request.getRequestId());
@@ -125,32 +158,40 @@ public class DoCreateLoan implements Command {
                 return !result.isOk();
             }
 
-            // Lưu vào context để các bước sau dùng
+            // ── Lưu vào context để các bước sau dùng ──────────────────
             context.put("ld_id", createOut.getLdId());
             context.put("drawdown_account", createOut.getDrawdownAccount());
             context.put("loan_transaction_id", createOut.getTransactionId());
-            context.put("loan_currency", createOut.getCurrency());
-            context.put("receiving_amount", createOut.getReceivingAmount());
+            context.put("loan_currency", createOut.getDrawdownAccountCurrency());
+            // loanFee từ MS Loan (phí MS Loan thu ở bước 7 luồng tạo khoản vay)
+            context.put("loan_fee", createOut.getLoanFee());
+            // actualLoanAmount = loanAmount - loanFee (số tiền thực nhận)
+            context.put("actual_loan_amount", createOut.getActualLoanAmount());
 
-            // Cập nhật ldId vào REGISTRATION record
+            // ── Cập nhật Registration ──────────────────────────────────
             registration.setLdId(createOut.getLdId());
+            registration.setLimitId(createOut.getLimitId());
+            registration.setCreditContractId(createOut.getCreditContractId());
             registration.setStep("CREATE_LOAN");
+            // Lưu phí từ MS Loan vào Registration để DoDisbursement build success screen
+            if (!Utility.isNull(createOut.getLoanFee())) {
+                registration.setCbcFee(new BigDecimal(createOut.getLoanFee()));
+            }
             registrationRepo.save(registration);
 
-            // ── Tạo ComTransDtlLoanDisbursement ──────────────────────────
+            // ── Tạo ComTransDtlLoanDisbursement ───────────────────────
             // Record này bắt buộc phải tồn tại trước khi DoDisbursement chạy
-            // id = registrationId (cùng PK với ComTrans disbursement)
-            String currency = createOut.getCurrency() != null
-                    ? createOut.getCurrency()
-                    : (disbReq.getCurrency() != null ? disbReq.getCurrency() : registration.getAccountCurrency());
-            BigDecimal amount = disbReq.getDisburseAmount() != null
-                    ? new java.math.BigDecimal(disbReq.getDisburseAmount()) : java.math.BigDecimal.ZERO;
+            String currency = createOut.getDrawdownAccountCurrency() != null
+                    ? createOut.getDrawdownAccountCurrency() : loanCurrency;
+            BigDecimal amount = registration.getLoanAmount() != null
+                    ? registration.getLoanAmount() : BigDecimal.ZERO;
 
             ComTransDtlLoanDisbursement dtl = ComTransDtlLoanDisbursement.builder()
-                    .id(registrationId)                                // PK = registration id
+                    .id(registrationId)
                     .custId(custInfo.getId())
                     .status(Constant.COM_STATUS_INT)
                     .debitAcctNo(createOut.getDrawdownAccount())      // working account (nguồn tiền)
+                    .debitAcctName(createOut.getDrawdownAccountName())
                     .debitAcctCcy(currency)
                     .debitAmount(amount)
                     .crebitAcctNo(disbReq.getSelectedAccountNumber()) // TK đích của KH
@@ -166,9 +207,9 @@ public class DoCreateLoan implements Command {
             disbursementRepo.saveAndFlush(dtl);
             log.info("[DoCreateLoan] Saved DtlLoanDisbursement - id:{}", registrationId);
 
-
-            log.info("[DoCreateLoan] SUCCESS - ldId:{}, drawdownAccount:{}, requestId:{}",
-                    createOut.getLdId(), createOut.getDrawdownAccount(), request.getRequestId());
+            log.info("[DoCreateLoan] SUCCESS - ldId:{}, drawdownAccount:{}, loanFee:{}, actualAmount:{}, requestId:{}",
+                    createOut.getLdId(), createOut.getDrawdownAccount(),
+                    createOut.getLoanFee(), createOut.getActualLoanAmount(), request.getRequestId());
 
         } catch (Exception e) {
             log.error("[DoCreateLoan] Exception - requestId:{}", request.getRequestId(), e);

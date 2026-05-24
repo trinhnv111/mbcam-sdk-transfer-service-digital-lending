@@ -11,7 +11,6 @@ import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLoanDisbursementRepo;
 import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
-import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.repository.ComTransProcessRepo;
 import com.mbc.common.repository.ComTransRepo;
 import com.mbc.common.util.Constant;
@@ -20,7 +19,6 @@ import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.constant.ServiceConstant;
-import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
@@ -48,7 +46,7 @@ import java.util.Objects;
  *   - request.getDisbursementRequest() → selectedAccountNumber, disbursementType
  *
  * Output vào context:
- *   - "ft_trans_hash" → transHash của FT (dùng cho DoPushEmoneyLoan TH2)
+ *   - " " → transHash của FT (dùng cho DoPushEmoneyLoan TH2)
  */
 @Slf4j
 @Service
@@ -66,7 +64,6 @@ public class DoDisbursement implements Command {
     private final ComTransDtlLoanDisbursementRepo comTransDtlLoanDisbursementRepo;
     private final ComTransDtlLoanRegistrationRepo registrationRepo;
     private final ComTransProcessRepo comTransProcessRepo;
-    private final ComTransDtlLmtRepository comTransDtlLmtRepository;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -188,24 +185,29 @@ public class DoDisbursement implements Command {
                 // Build DisbursementSuccessData cho Success screen (Figma)
                 try {
                     String ldId = (String) context.get("ld_id");
-                    // Load lmt theo hostCifId — KHÔNG dùng request.getTransId() vì transId ở bước
-                    // disbursement là ID của ComTrans giải ngân, không phải ID của ComTransDtlLmt
-                    ComTransDtlLmt lmt = comTransDtlLmtRepository
-                            .findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
-                                    custInfo.getHostCifId(),
-                                    SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
-                                    Constant.STATUS_SUCCESS);
-                    String dueDateStr = null;
-                    java.math.BigDecimal feeAmount = java.math.BigDecimal.ZERO;
-                    if (lmt != null) {
-                        if (lmt.getLoanDueDate() != null) {
-                            dueDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(lmt.getLoanDueDate());
-                        }
-                        if (lmt.getCbcFee() != null) feeAmount = lmt.getCbcFee();
+                    // Lấy loanFee & actualLoanAmount từ MS Loan response (đã lưu vào context ở DoCreateLoan)
+                    String loanFeeStr = (String) context.get("loan_fee");
+                    String actualAmountStr = (String) context.get("actual_loan_amount");
+
+                    // Lấy dueDate từ Registration
+                    String registrationId = (String) context.get("registration_id");
+                    ComTransDtlLoanRegistration reg = null;
+                    if (!Utility.isNull(registrationId)) {
+                        reg = registrationRepo.findById(registrationId).orElse(null);
                     }
+                    String dueDateStr = null;
+                    if (reg != null && reg.getLoanDueDate() != null) {
+                        dueDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd").format(reg.getLoanDueDate());
+                    }
+
+                    java.math.BigDecimal feeAmount = !Utility.isNull(loanFeeStr)
+                            ? new java.math.BigDecimal(loanFeeStr) : java.math.BigDecimal.ZERO;
                     java.math.BigDecimal disbAmt = disbReq.getDisburseAmount() != null
                             ? new java.math.BigDecimal(disbReq.getDisburseAmount()) : java.math.BigDecimal.ZERO;
-                    java.math.BigDecimal receivingAmt = disbAmt.subtract(feeAmount);
+                    // actualLoanAmount = loanAmount - loanFee (từ MS Loan)
+                    java.math.BigDecimal receivingAmt = !Utility.isNull(actualAmountStr)
+                            ? new java.math.BigDecimal(actualAmountStr)
+                            : disbAmt.subtract(feeAmount);
                     // Transaction Code: FT (TH1) hoặc transHash Bakong (TH2)
                     String txCode = !Utility.isNull(transHash) ? transHash : ft;
 
@@ -271,7 +273,7 @@ public class DoDisbursement implements Command {
             String custId, String requestId) throws Exception {
 
         FundsTransferInfo info = buildTransferInfo(
-                debitAcctNo, dtl.getDebitAcctName(), currency,  // debit = current account của KH
+                debitAcctNo, "drawdownAccount", currency,    // debit = working account (giống TH1)
                 creditWalletNo, creditWalletName, currency,      // credit = số ví eMoney
                 amount, currency,
                 dtl.getBranchCode(), remark,
