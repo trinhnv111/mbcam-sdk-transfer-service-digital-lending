@@ -8,211 +8,273 @@ import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLmtRepository;
 import com.mbc.common.services.il.nonsavingacct.*;
 import com.mbc.common.util.Constant;
-import com.mbc.common.util.JSON;
-import com.mbc.common.validator.base.Validator.Result;
-import com.mbc.gateway.validator.result.SimpleResult;
+import com.mbc.common.util.Utility;
+import com.mbc.common.validator.base.Validator;
 import com.mbc.common.api.ApiCustomer;
+import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.CallMsILService;
-import com.mbc.mobileapp.api.model.digitalloan.output.AccountCodeArr;
 import com.mbc.mobileapp.api.model.register.NonSavingAccount;
 import com.mbc.mobileapp.api.model.register.NonSavingAcctDataOutput;
 import com.mbc.mobileapp.command.digital_loan.salary_advance.DoGetCustInfoFromEM;
 import com.mbc.mobileapp.command.digital_loan.salary_advance.DoValidateSalaryCust;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.chain.Command;
 import org.apache.commons.chain.Context;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Command duy nhất cho chain POST /digital-loan/valid-disbursement
+ *
+ * Thứ tự xử lý:
+ *  1. Load ComTransDtlLmt theo transId
+ *  2. Validate limitEndDate (hết hạn → lỗi)
+ *  3a. Nếu today ≠ startDate → eMoney re-check (doGetCustInfoFromEM + doValidateSalaryCust)
+ *  3b. Luôn gọi getNonSavingAccountListOtherSalary → filter → auto-create nếu rỗng
+ *  4. Tính remaining = approveLimit - usedLimit, check > 0
+ *  5. Build ValidDisbursementResponse:
+ *     - Slider: availableAmount, minAmount, maxAmount, currency, limitEndDate
+ *     - accountList: [EMONEY entry từ lmt] + [MBC accounts từ bước 3b]
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DoCheckDisbursementAccount implements Command {
 
     private final ComTransDtlLmtRepository comTransDtlLmtRepository;
+    private final ApiCustomer apiCustomer;
+    private final CallMsILService callMsILService;
     private final DoGetCustInfoFromEM doGetCustInfoFromEM;
     private final DoValidateSalaryCust doValidateSalaryCust;
-    private final CallMsILService callMsILService;
-    private final ApiCustomer apiCustomer;
 
     @Override
-    public boolean execute(Context context) throws Exception {
-        ProcessContext processContext = (ProcessContext) context;
-        Result result = Result.OK;
-        CustInfo custInfo = processContext.getCustomer();
-        CommonServiceRequest request = (CommonServiceRequest) processContext.getRequest();
-        CommonServiceResponse response = (CommonServiceResponse) processContext.getResponse();
-        ValidDisbursementRequest validDisbursementRequest = request.getValidDisbursementRequest();
+    public boolean execute(Context cntxt) throws Exception {
+        ProcessContext context = (ProcessContext) cntxt;
+        Validator.Result result = Validator.Result.OK;
+        CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
+        CommonServiceResponse response = (CommonServiceResponse) context.getResponse();
+        CustInfo custInfo = context.getCustomer();
 
         try {
-            ComTransDtlLmt comTransDtlLmt = comTransDtlLmtRepository.findById(validDisbursementRequest.getTransId())
-                    .orElseThrow(() -> new RuntimeException("ComTransDtlLmt not found with transId: " + validDisbursementRequest.getTransId()));
+            ValidDisbursementRequest validReq = request.getValidDisbursementRequest();
 
-            LocalDate today = LocalDate.now();
+            // ── 1. Load hạn mức active của KH ───────────────────────────────
+            // Query bằng hostCifId (session-trusted) + loanType + status=SUCCESS
+            ComTransDtlLmt lmt = comTransDtlLmtRepository
+                    .findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
+                            custInfo.getHostCifId(),
+                            SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
+                            Constant.STATUS_SUCCESS);
 
-            LocalDate valueDate = comTransDtlLmt.getLimitValueDate()
-                    .toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            LocalDate endDate = comTransDtlLmt.getLimitEndDate()
-                    .toInstant()
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            String currency = comTransDtlLmt.getCurrency();
-
-            // TRƯỜNG HỢP 1: Ngày yêu cầu khác ngày cấp hạn mức và chưa quá hạn
-            if (!today.equals(valueDate) && !today.isAfter(endDate)) {
-                log.info("[DoCheckDisbursementAccount] Ngày yêu cầu giải ngân khác ngày cấp hạn mức -> Check qua eM");
-
-                boolean isGetCustomer = doGetCustInfoFromEM.execute(context);
-                if (isGetCustomer) return true;
-
-                boolean isValidate = doValidateSalaryCust.execute(context);
-                if (isValidate) return true;
-            }
-
-            // TRƯỜNG HỢP 2: Ngày yêu cầu giải ngân BẰNG ngày cấp hạn mức
-            if (today.equals(valueDate)) {
-                if (custInfo != null) {
-                    log.info("[DoCheckDisbursementAccount] Ngày giải ngân bằng ngày cấp hạn mức -> Gọi danh sách tài khoản IL");
-
-                    NonSavingAcctInput inputMessage = new NonSavingAcctInput();
-                    inputMessage.setCustomerId(custInfo.getHostCifId());
-
-                    ExecuteT24Output<List<AccountBase>> iLResponse = apiCustomer.getNonSavingAccountListOtherSalary(inputMessage, custInfo.getId(), request.getRequestId());
-
-                    // cờ kiểm tra
-                    boolean hasValidAccount = false;
-                    List<AccountBase> validAccountList = new ArrayList<>();
-
-                    if (iLResponse != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(iLResponse.getStatus())) {
-                        List<AccountBase> accountList = iLResponse.getData();
-
-                        if (accountList != null && !accountList.isEmpty()) {
-                            log.info("[DoCheckDisbursementAccount] Lấy danh sách tài khoản thành công, số lượng: {}", accountList.size());
-
-                            for (AccountBase arr : accountList) {
-                                // 1. Kiểm tra Currency (Phải trùng với khoản vay)
-                                if (!currency.equalsIgnoreCase(arr.getAcctnCurrency())) {
-                                    log.info("[DoCheckDisbursementAccount] Tài khoản {} bỏ qua vì lệch Currency: {}", arr.getAcctId(), arr.getAcctnCurrency());
-                                    continue;
-                                }
-
-                                // 2. Kiểm tra Active
-                                if (!Constant.ACCT_STATUS_ACTIVE.equalsIgnoreCase(arr.getAcctnStatus())) {
-                                    log.info("[DoCheckDisbursementAccount] Tài khoản {} bỏ qua vì status không phải ACTIVE: {}", arr.getAcctId(), arr.getAcctnStatus());
-                                    continue;
-                                }
-
-                                // 3. Kiểm tra Chặn
-                                List<PostingRestrict> restrictList = arr.getPostingRestrictList();
-                                if (restrictList != null && !restrictList.isEmpty()) {
-                                    // Nếu mảng không rỗng, kiểm tra xem có ID chặn hợp lệ hay không
-                                    boolean isBlocked = restrictList.stream()
-                                            .anyMatch(r -> r != null && r.getId() != null && !r.getId().trim().isEmpty());
-
-                                    if (isBlocked) {
-                                        log.info("[DoCheckDisbursementAccount] Tài khoản {} bỏ qua vì nằm trong danh sách chặn", arr.getAcctId());
-                                        continue;
-                                    }
-                                }
-
-                                // 4. Kiểm tra Joint Account
-//                                if (arr.getJointAccountType() != null) {
-//                                    log.info("[DoCheckDisbursementAccount] Tài khoản {} bỏ qua vì là Joint Account", arr.getAcctId());
-//                                    continue;
-//                                }
-
-                                // Tài khoản hợp lệ
-                                validAccountList.add(arr);
-                            }
-
-                            // kết quả sau khi lọc danh sách
-                            if (!validAccountList.isEmpty()) {
-                                hasValidAccount = true;
-                            }
-                        }
-                    } else {
-                        log.error("[DoCheckDisbursementAccount] Lỗi lấy danh sách tài khoản từ IL: {}", iLResponse != null ? iLResponse.getErrorDesc() : "null");
-                    }
-
-
-                    if (hasValidAccount) {
-                        log.info("[DoCheckDisbursementAccount] Thỏa mãn điều kiện (Có {} TK hợp lệ) -> Chuyển sang BƯỚC 8", validAccountList.size());
-                        response.setLstNonSavingAccount(validAccountList);
-                        result = Result.OK;
-                    } else {
-                        log.info("[DoCheckDisbursementAccount] Không có tài khoản nào thỏa mãn -> (Mở tài khoản tự động)");
-
-                        // mở tài khoản qua MS Account
-                        NonSavingAccount nonSavingAcctInput = new NonSavingAccount();
-                        nonSavingAcctInput.setAccountTitle(comTransDtlLmt.getFullName());
-                        nonSavingAcctInput.setBranchCode("KH0010001");
-                        nonSavingAcctInput.setCategory("1001");
-                        nonSavingAcctInput.setCurrency(currency);
-                        nonSavingAcctInput.setCustomerId(custInfo.getHostCifId());
-                        nonSavingAcctInput.setShortTitle(comTransDtlLmt.getFullName());
-                        ExecuteT24Output<NonSavingAcctDataOutput> mSAccount = callMsILService.createNonSavingAccount(nonSavingAcctInput, custInfo.getId(), request.getRequestId());
-                        if (mSAccount != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(mSAccount.getStatus())) {
-                            log.info("[DoCheckDisbursementAccount] Mở tài khoản thành công");
-
-                            List<AccountBase> responseList = new ArrayList<>();
-                            AccountBase accountBase = new AccountBase();
-                            if (mSAccount.getData() != null) {
-                                accountBase.setAcctId(mSAccount.getData().getAccountId());
-                            }
-                            accountBase.setAcctnCurrency(currency);
-                            accountBase.setAcctnName(comTransDtlLmt.getFullName());
-
-                            Balance balance = new Balance();
-                            balance.setActual("0");
-                            accountBase.setBalance(balance);
-
-                            List<RelationshipManager> rmList = new ArrayList<>();
-                            RelationshipManager rm = new RelationshipManager();
-                            rm.setPhoneNo(custInfo.getPhoneNo());
-                            rmList.add(rm);
-                            accountBase.setRelationshipManager(rmList);
-
-                            responseList.add(accountBase);
-                            response.setLstNonSavingAccount(responseList);
-                        } else {
-                            log.error("[DoCheckDisbursementAccount] Mở tài khoản thất bại");
-                            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false, ResponseCode.TRANSACTION_FAIL.getDesc());
-                            processContext.setResult(result);
-                            return true;
-                        }
-
-                        result = Result.OK;
-                    }
-                }
-            }
-
-            // TRƯỜNG HỢP 3: Quá hạn mức ngày kết thúc hạn mức
-            if (today.isAfter(endDate)) {
-                log.error("[Exception valid disbursement account today > limitEndDate] requestId: {}", request.getRequestId());
-                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                        ResponseCode.TRANSACTION_FAIL.getDesc());
-                processContext.setResult(result);
+            if (lmt == null) {
+                log.error("[DoCheckDisbursementAccount] Không tìm thấy hạn mức active - hostCifId:{}", custInfo.getHostCifId());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
                 return true;
             }
 
-        } catch (Exception e) {
-            log.error("[Exception valid disbursement account] requestId: {} desc: {}", request.getRequestId(), JSON.stringify(e));
-            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getCode(), false,
-                    ResponseCode.TRANSACTION_FAIL.getDesc());
-        }
+            // Cross-check: transId từ FE phải khớp với hạn mức active của KH
+            if (!lmt.getId().equals(validReq.getTransId())) {
+                log.error("[DoCheckDisbursementAccount] transId không khớp - lmt.id:{}, req.transId:{}, hostCifId:{}",
+                        lmt.getId(), validReq.getTransId(), custInfo.getHostCifId());
+                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return true;
+            }
 
-        processContext.setResult(result);
+            // ── 2. Validate limitEndDate ──────────
+            LocalDate today = LocalDate.now();
+            LocalDate startDate = lmt.getStartDate() != null
+                    ? lmt.getStartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                    : today;
+            LocalDate endDate = lmt.getEndDate() != null
+                    ? lmt.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                    : null;
+
+            if (endDate == null || today.isAfter(endDate)) {
+                log.error("[DoCheckDisbursementAccount] Hạn mức đã hết hạn - endDate:{}, today:{}, requestId:{}",
+                        endDate, today, request.getRequestId());
+                result = new SimpleResult(
+                        "Hạn mức ứng lương đã hết hạn. Vui lòng đăng ký lại.",
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return true;
+            }
+
+            String currency = lmt.getCurrency();
+
+            // ── 3a. eMoney re-check (chỉ khi today ≠ startDate) ────────────
+            if (!today.equals(startDate)) {
+                log.info("[DoCheckDisbursementAccount] Different-day → eMoney re-check, requestId:{}", request.getRequestId());
+                boolean stop = doGetCustInfoFromEM.execute(context);
+                if (stop) return true;
+                stop = doValidateSalaryCust.execute(context);
+                if (stop) return true;
+            }
+
+            // ── 3b. Lấy danh sách tài khoản MBC (luôn gọi) 
+            log.info("[DoCheckDisbursementAccount] getNonSavingAccountList, requestId:{}", request.getRequestId());
+            List<AccountBase> validAccountList = new ArrayList<>();
+
+            NonSavingAcctInput inputMessage = new NonSavingAcctInput();
+            inputMessage.setCustomerId(custInfo.getHostCifId());
+
+            ExecuteT24Output<List<AccountBase>> iLResponse = apiCustomer
+                    .getNonSavingAccountListOtherSalary(inputMessage, custInfo.getId(), request.getRequestId());
+
+            if (iLResponse != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(iLResponse.getStatus())
+                    && iLResponse.getData() != null) {
+                for (AccountBase acct : iLResponse.getData()) {
+                    if (!currency.equalsIgnoreCase(acct.getAcctnCurrency())) continue;
+                    if (!Constant.ACCT_STATUS_ACTIVE.equalsIgnoreCase(acct.getAcctnStatus())) continue;
+                    List<PostingRestrict> restricts = acct.getPostingRestrictList();
+                    if (restricts != null && restricts.stream()
+                            .anyMatch(r -> r != null && r.getId() != null && !r.getId().trim().isEmpty())) continue;
+                    validAccountList.add(acct);
+                }
+            } else {
+                log.warn("[DoCheckDisbursementAccount] Không lấy được danh sách TK từ IL: {}",
+                        iLResponse != null ? iLResponse.getErrorDesc() : "null");
+            }
+
+            // Auto-create nếu không có tài khoản hợp lệ
+            if (validAccountList.isEmpty()) {
+                log.info("[DoCheckDisbursementAccount] Không có TK hợp lệ → auto-create, requestId:{}", request.getRequestId());
+                NonSavingAccount createInput = new NonSavingAccount();
+                createInput.setAccountTitle(lmt.getFullName());
+                createInput.setBranchCode("KH0010001");
+                createInput.setCategory("1001");
+                createInput.setCurrency(currency);
+                createInput.setCustomerId(custInfo.getHostCifId());
+                createInput.setShortTitle(lmt.getFullName());
+
+                ExecuteT24Output<NonSavingAcctDataOutput> created = callMsILService
+                        .createNonSavingAccount(createInput, custInfo.getId(), request.getRequestId());
+
+                if (created != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(created.getStatus())) {
+                    log.info("[DoCheckDisbursementAccount] Tạo TK thành công, lấy lại danh sách TK từ IL, requestId:{}", request.getRequestId());
+                    ExecuteT24Output<List<AccountBase>> iLResponseAfterCreate = apiCustomer
+                            .getNonSavingAccountListOtherSalary(inputMessage, custInfo.getId(), request.getRequestId());
+
+                    if (iLResponseAfterCreate != null && Constant.CALL_MICROSERVICE_SUCCESS.equals(iLResponseAfterCreate.getStatus())
+                            && iLResponseAfterCreate.getData() != null) {
+                        for (AccountBase acct : iLResponseAfterCreate.getData()) {
+                            if (!currency.equalsIgnoreCase(acct.getAcctnCurrency())) continue;
+                            if (!Constant.ACCT_STATUS_ACTIVE.equalsIgnoreCase(acct.getAcctnStatus())) continue;
+                            List<PostingRestrict> restricts = acct.getPostingRestrictList();
+                            if (restricts != null && restricts.stream()
+                                    .anyMatch(r -> r != null && r.getId() != null && !r.getId().trim().isEmpty())) continue;
+                            validAccountList.add(acct);
+                        }
+                    } else {
+                        log.error("[DoCheckDisbursementAccount] Lấy danh sách TK thất bại sau khi tạo mới, requestId:{}", request.getRequestId());
+                        result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                                ResponseCode.TRANSACTION_FAIL.getCode());
+                        context.setResult(result);
+                        return true;
+                    }
+                } else {
+                    log.error("[DoCheckDisbursementAccount] Auto-create TK thất bại, requestId:{}", request.getRequestId());
+                    result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                            ResponseCode.TRANSACTION_FAIL.getCode());
+                    context.setResult(result);
+                    return true;
+                }
+            }
+
+            // ── 4. Tính remaining 
+            BigDecimal approveLimit = lmt.getApproveLimit() != null ? lmt.getApproveLimit() : BigDecimal.ZERO;
+            BigDecimal usedLimit = lmt.getUsedLimit() != null ? lmt.getUsedLimit() : BigDecimal.ZERO;
+            BigDecimal remaining = approveLimit.subtract(usedLimit);
+
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                log.error("[DoCheckDisbursementAccount] Đã dùng hết hạn mức - approveLimit:{}, usedLimit:{}, requestId:{}",
+                        approveLimit, usedLimit, request.getRequestId());
+                result = new SimpleResult("Hạn mức ứng lương đã sử dụng hết.", false,
+                        ResponseCode.TRANSACTION_FAIL.getCode());
+                context.setResult(result);
+                return true;
+            }
+
+            log.info("[DoCheckDisbursementAccount] OK - remaining:{}, currency:{}, endDate:{}, requestId:{}",
+                    remaining, currency, endDate, request.getRequestId());
+
+            // ── 5. Build ValidDisbursementResponse 
+            ValidDisbursementResponse resp = new ValidDisbursementResponse();
+            resp.setTransId(lmt.getId());
+
+            // Slider config
+            resp.setAvailableAmount(remaining);
+            resp.setMaxAmount(remaining);
+            resp.setMinAmount(new BigDecimal("50"));
+            resp.setCurrency(currency);
+            resp.setLimitEndDate(endDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+
+            // Account list: map trực tiếp từ IL response
+            // participantCode = "EMONEY" → accountType = "EMONEY" (ví eMoney)
+            // participantCode null/blank  → accountType = acctnType từ T24 (OD, CURRENT...)
+            List<ValidDisbursementResponse.DisbursementAccountInfo> accountInfoList = new ArrayList<>();
+            boolean hasEmoneyFromIL = false;
+
+            for (AccountBase acct : validAccountList) {
+                ValidDisbursementResponse.DisbursementAccountInfo info = new ValidDisbursementResponse.DisbursementAccountInfo();
+                info.setAcctId(acct.getAcctId());
+                info.setAcctnCurrency(acct.getAcctnCurrency());
+                info.setAcctnName(acct.getAcctnName());
+                if (acct.getBalance() != null) info.setActual(acct.getBalance().getActual());
+                if (acct.getRelationshipManager() != null && !acct.getRelationshipManager().isEmpty()) {
+                    info.setPhoneNo(acct.getRelationshipManager().get(0).getPhoneNo());
+                }
+                info.setParticipantCode(acct.getParticipantCode());
+
+                // Phân loại theo participantCode
+                if ("EMONEY".equalsIgnoreCase(acct.getParticipantCode())) {
+                    info.setAccountType("EMONEY");
+                    hasEmoneyFromIL = true;
+                } else {
+                    info.setAccountType(acct.getAcctnType());
+                }
+                accountInfoList.add(info);
+            }
+
+            // Fallback: nếu IL không trả eMoney account → build từ lmt (đã lưu lúc init-hard code)
+            if (!hasEmoneyFromIL && !Utility.isNull(lmt.getEmCustomerId())) {
+                ValidDisbursementResponse.DisbursementAccountInfo emoneyAcct = new ValidDisbursementResponse.DisbursementAccountInfo();
+                emoneyAcct.setAcctId(lmt.getEmCustomerId());
+                emoneyAcct.setAcctnName(lmt.getFullName());
+                emoneyAcct.setAcctnCurrency(currency);
+                emoneyAcct.setPhoneNo(custInfo.getPhoneNo());
+                emoneyAcct.setAccountType("EMONEY");
+                emoneyAcct.setActual("0");
+                accountInfoList.add(0, emoneyAcct); // đặt lên đầu danh sách
+            }
+
+
+            resp.setAccountList(accountInfoList);
+            response.setValidDisbursementResponse(resp);
+
+        } catch (Exception e) {
+            log.error("[DoCheckDisbursementAccount] Exception - requestId:{}, desc: {}", request.getRequestId(), e.toString());
+            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
+                    ResponseCode.TRANSACTION_FAIL.getCode());
+        }
+        context.setResult(result);
+        context.setResponse(response);
         return !result.isOk();
     }
 }

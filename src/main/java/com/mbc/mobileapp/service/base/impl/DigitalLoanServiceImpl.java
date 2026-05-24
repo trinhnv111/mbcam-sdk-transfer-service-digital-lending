@@ -36,6 +36,7 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     private final LoanValidDisbursementService loanValidDisbursementService;
     private final LoanDisbursementService loanDisbursementService;
     private final LoanDisbursementInformation loanDisbursementInformation;
+    private final LoanGenFileService loanGenFileService;
 
     @Override
     public GetLoanResponse getLoan(CommonServiceRequest request, CustInfo cust) {
@@ -138,26 +139,12 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
             response.setResult(result);
             if (result.isOk()) {
                 CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
-                response.setTransId(res.getTransId());
-
-
-                if (res.getLstNonSavingAccount() != null) {
-                    List<ValidDisbursementResponse.DisbursementAccountInfo> accountInfos = new ArrayList<>();
-                    for (com.mbc.common.services.il.nonsavingacct.AccountBase accountBase : res.getLstNonSavingAccount()) {
-                        ValidDisbursementResponse.DisbursementAccountInfo info = new ValidDisbursementResponse.DisbursementAccountInfo();
-                        info.setAcctId(accountBase.getAcctId());
-                        info.setAcctnCurrency(accountBase.getAcctnCurrency());
-                        info.setAcctnName(accountBase.getAcctnName());
-                        info.setParticipantCode(accountBase.getParticipantCode());
-                        if (accountBase.getBalance() != null) {
-                            info.setActual(accountBase.getBalance().getActual());
-                        }
-                        if (accountBase.getRelationshipManager() != null && !accountBase.getRelationshipManager().isEmpty()) {
-                            info.setPhoneNo(accountBase.getRelationshipManager().get(0).getPhoneNo());
-                        }
-                        accountInfos.add(info);
-                    }
-                    response.setAccountList(accountInfos);
+                // Lấy toàn bộ response đã được build trong DoCheckDisbursementAccount
+                // (bao gồm slider config: availableAmount, minAmount, maxAmount, currency,
+                //  limitEndDate, eMobileNumber, accountList với EMONEY+MBC entries)
+                if (res.getValidDisbursementResponse() != null) {
+                    response = res.getValidDisbursementResponse();
+                    response.setResult(result);
                 }
             }
         } catch (Exception e) {
@@ -171,7 +158,6 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     @Override
     public DisbursementResponse<Object> disbursement(Request request, CustInfo cust) {
         ProcessContext context = loadContext(request, cust);
-//        context.putVar(Constant.KeyVar.OTP, tokenOtp);
         DisbursementResponse<Object> response = new DisbursementResponse<>();
         Validator.Result result;
         try {
@@ -181,7 +167,12 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
             response.setResult(result);
             if (result.isOk()) {
                 CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
-                response.setData(res.getFt());
+                // Ưu tiên trả DisbursementSuccessData cho Success screen (Figma)
+                if (res.getDisbursementSuccessData() != null) {
+                    response.setData(res.getDisbursementSuccessData());
+                } else {
+                    response.setData(res.getFt()); // fallback FT string
+                }
             }
         } catch (Exception e) {
             log.error(e.toString());
@@ -214,6 +205,27 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
         }
         return response;
 
+    }
+
+    @Override
+    public DisbursementResponse<Object> genFile(CommonServiceRequest request, CustInfo cust) {
+        ProcessContext context = loadContext(request, cust);
+        DisbursementResponse<Object> response = new DisbursementResponse<>();
+        Validator.Result result;
+        try {
+            loanGenFileService.execute(context);
+            logService.execute(context);
+            result = context.getResult();
+            response.setResult(result);
+            if (result.isOk()) {
+                CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
+                response.setData(res.getDoGenFileOutput());
+            }
+        } catch (Exception e) {
+            log.error("[genFile] Exception: {}", e.toString());
+            context.setResult(Validator.Result.UNKNOWN);
+        }
+        return response;
     }
 
 }

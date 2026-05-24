@@ -13,6 +13,7 @@ import com.mbc.mobileapp.api.model.digitalloan.output.GetLoanOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.LdFeeData;
 import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanGetPdOutput;
 import com.mbc.mobileapp.api.model.digitalloan.output.PaymentHistoryOutPut;
+import com.mbc.mobileapp.api.model.loanorigination.output.DoGenFileOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceAddressOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceBankListOutput;
 import com.mbc.mobileapp.api.model.remittance.output.RemittanceMakeTransferFinishOutput;
@@ -166,4 +167,10 @@ public class CommonServiceResponse extends Response {
     private SalaryAdvanceOfferLimitData salaryAdvanceOfferLimitData;
     private ValidDisbursementResponse validDisbursementResponse;
     private DisbursementInformationResponse disbursementInformationResponse;
+    private DoGenFileOutput doGenFileOutput;
+
+    //region Disbursement Success
+    private com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementSuccessData disbursementSuccessData;
+    //endregion
 }
+
