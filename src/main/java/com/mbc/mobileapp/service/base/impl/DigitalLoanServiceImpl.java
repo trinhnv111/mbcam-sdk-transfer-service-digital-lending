@@ -7,6 +7,8 @@ import com.mbc.common.object.CustInfo;
 import com.mbc.common.util.AppLog;
 import com.mbc.common.util.Constant;
 import com.mbc.common.validator.base.Validator;
+import com.mbc.mobileapp.command.digital_loan.DoDisbursement;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementInformationResponse;
@@ -154,7 +156,6 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
     @Override
     public DisbursementResponse<Object> disbursement(Request request, CustInfo cust) {
         ProcessContext context = loadContext(request, cust);
-//        context.putVar(Constant.KeyVar.OTP, tokenOtp);
         DisbursementResponse<Object> response = new DisbursementResponse<>();
         Validator.Result result;
         try {
@@ -169,11 +170,11 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
                 java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
                 data.put("ft", res.getFt());
 
-                Object ciftpStatus = context.get("ciftp_status");
+                Object ciftpStatus = context.get(SalaryAdvanceConstant.CTX_CIFTP_STATUS);
                 if (ciftpStatus != null) {
                     data.put("ciftpStatus", ciftpStatus);
                 }
-                Object ciftpFt = context.get("ciftp_ft");
+                Object ciftpFt = context.get(SalaryAdvanceConstant.CTX_CIFTP_FT);
                 if (ciftpFt != null) {
                     data.put("ciftpFt", ciftpFt);
                 }

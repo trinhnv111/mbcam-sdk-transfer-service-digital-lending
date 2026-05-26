@@ -106,7 +106,7 @@ public class DoCreateLoan implements Command {
                     // Thông tin KH
                     .customerCode(lmt.getHostCifId())
                     .customerName(lmt.getFullName())
-                    .phoneNumber(lmt.getPhoneNumber())
+                    .phoneNumber(lmt.getReferrerPhone())
                     .occupation(lmt.getOccupation())
                     .employmentDate(employmentDateStr)
                     .monthlySalary(lmt.getMonthlyIncome())
@@ -170,7 +170,7 @@ public class DoCreateLoan implements Command {
             registration.setLdId(createOut.getLdId());
             registration.setLimitId(createOut.getLimitId());
             registration.setCreditContractId(createOut.getCreditContractId());
-            registration.setStep("CREATE_LOAN");
+            registration.setStep(SalaryAdvanceConstant.STEP_CREATE_LOAN);
             if (!Utility.isNull(createOut.getLoanFee())) {
                 registration.setCbcFee(new BigDecimal(createOut.getLoanFee()));
             }
@@ -197,7 +197,7 @@ public class DoCreateLoan implements Command {
                     .amount(amount)
                     .currency(currency)
                     .transferType(disbReq.getDisbursementType())      // MBC_ACCOUNT | EMONEY_WALLET
-                    .productType("SALARY_ADVANCE")
+                    .productType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE)
                     .transactionDate(new java.util.Date())
                     .build();
             disbursementRepo.saveAndFlush(dtl);

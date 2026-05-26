@@ -24,5 +24,18 @@ public class SalaryAdvanceConstant {
     /** Số lần retry tối đa khi Chặng 3 bị timeout (BRS bước 44) */
     public static final int CIFTP_MAX_RETRY = 3;
 
+    // ── Context keys (dùng chung DoDisbursement ↔ DoPushEmoneyLoan ↔ ServiceImpl) ──
+    public static final String CTX_FT_TRANS_HASH  = "ft_trans_hash";
+    public static final String CTX_CIFTP_FT       = "ciftp_ft";
+    public static final String CTX_CIFTP_STATUS   = "ciftp_status";
+    public static final String CTX_MS_LOAN_RESP   = "ms_loan_response";
+    public static final String CTX_EM_WALLET_NO   = "em_wallet_number";
+    public static final String CTX_EM_WALLET_NAME = "em_wallet_name";
+
+    // ── CIFTP status values ──
+    public static final String CIFTP_SUCCESS        = "SUCCESS";
+    public static final String CIFTP_FAIL           = "FAIL";
+    public static final String CIFTP_FAIL_NO_WALLET = "FAIL_NO_WALLET";
+
 }
 

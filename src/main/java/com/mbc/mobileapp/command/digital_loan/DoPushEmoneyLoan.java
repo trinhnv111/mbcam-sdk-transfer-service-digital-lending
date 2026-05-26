@@ -61,7 +61,7 @@ public class DoPushEmoneyLoan implements Command {
 
             String ldId = (String) context.get("ld_id");
             String currency = (String) context.get("loan_currency");
-            String transHash = (String) context.get("ft_trans_hash"); // set bởi DoDisbursement TH2
+            String transHash = (String) context.get(DoDisbursement.CTX_FT_TRANS_HASH); // set bởi DoDisbursement Chặng 3
             String registrationId = (String) context.get("registration_id");
 
             if (Utility.isNull(ldId)) {
