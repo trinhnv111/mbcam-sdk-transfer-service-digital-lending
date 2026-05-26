@@ -164,7 +164,21 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
             response.setResult(result);
             if (result.isOk()) {
                 CommonServiceResponse res = (CommonServiceResponse) context.getResponse();
-                response.setData(res.getFt());
+
+                // Đóng gói data trả FE: ft (Chặng 2) + ciftpStatus (Chặng 3, nếu có)
+                java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+                data.put("ft", res.getFt());
+
+                Object ciftpStatus = context.get("ciftp_status");
+                if (ciftpStatus != null) {
+                    data.put("ciftpStatus", ciftpStatus);
+                }
+                Object ciftpFt = context.get("ciftp_ft");
+                if (ciftpFt != null) {
+                    data.put("ciftpFt", ciftpFt);
+                }
+
+                response.setData(data);
             }
         } catch (Exception e) {
             log.error(e.toString());
