@@ -124,10 +124,6 @@ public class ApiMsLoan extends CallMicroService {
         }
     }
 
-
-    /**
-     * Gọi MS Loan API tính phí.
-     */
     /**
      * Gọi MS Loan API tính phí.
      */
@@ -162,10 +158,9 @@ public class ApiMsLoan extends CallMicroService {
     }
 
     /**
-     * Gọi MS Loan API tạo khoản vay LD trên T24 Core Banking.
-     * Sau khi OTP hợp lệ, đây là bước hạch toán Core đầu tiên.
-     * Output: ldId, drawdownAccount, transactionId
+     * Gọi MS Loan API thực hiện giải ngân .
      */
+
     public ExecuteT24Output<MsLoanCreateOutput> createLoan(MsLoanCreateRequest request,
                                                            String custId, String requestId) {
         try {
@@ -184,4 +179,7 @@ public class ApiMsLoan extends CallMicroService {
             return null;
         }
     }
+
+
 }
+

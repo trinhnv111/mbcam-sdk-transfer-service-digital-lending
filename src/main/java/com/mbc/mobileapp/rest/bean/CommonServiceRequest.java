@@ -7,8 +7,8 @@ import com.mbc.common.bean.TokenOtp;
 import com.mbc.mobileapp.object.resgister.RegisterCustInfo;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementInformationRequest;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
-import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.GenFileRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.remittance.finish.MakeTransferFinishRequest;
@@ -249,19 +249,17 @@ public class CommonServiceRequest extends Request {
 
     private ValidDisbursementRequest validDisbursementRequest;
 
-    private GenFileRequest genFileRequest;
-
     //region Digital Lending Common
     private GetLoanRequest getLoanRequest;
     private PaymentRequest paymentRequest;
     private LoanRepaymentRequest loanRepaymentRequest;
+    private GenFileRequest genFileRequest;
+    private DisbursementRequest disbursementRequest;
     //endregion
 
     //region Salary Advance
     private SalaryAdvanceInitRequest salaryAdvanceInitRequest;
     private SalaryAdvanceCreateRequest salaryAdvanceCreateRequest;
     private DisbursementInformationRequest digitalLoanRequest;
-    private DisbursementRequest disbursementRequest;
     //endregion
 }
-

@@ -1,14 +1,12 @@
 package com.mbc.mobileapp.command.digital_loan;
 
 import com.mbc.common.bean.ProcessContext;
-import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.entity.ComTransDtlLoanRegistration;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
 import com.mbc.common.util.Constant;
 import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
-import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.ApiEMoney;
 import com.mbc.mobileapp.api.model.digitalloan.input.EmLoanDisbursementRequest;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmLoanDisbursementData;

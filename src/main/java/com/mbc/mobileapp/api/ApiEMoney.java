@@ -138,7 +138,7 @@ public class ApiEMoney extends CallApiGee {
     public ExcuteEmoney<EmLoanDisbursementData> pushLoanDisbursement(
             EmLoanDisbursementRequest request, String custId, String requestId) {
         try {
-            String merchantCode = getUrl("emoney.merchant-code");
+            String merchantCode = "MBCLENDING";
             String basePath = getUrl("apigee.emoney.digital-lending.loan-disbursement.url");
             String fullUrl = getUrl("apigee.host.url") + "/" + merchantCode + basePath;
             AppLog.info("[API-EMONEY] pushLoanDisbursement via Apigee - requestId:" + requestId

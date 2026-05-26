@@ -2,7 +2,7 @@ package com.mbc.mobileapp.api.model.salary_advance.output;
 
 import lombok.Data;
 
-/** Response wrapper từ eMoney /digital-lending/loan/disbursement */
+/** Response eMoney */
 @Data
 public class EmLoanDisbursementResponse {
     private Integer status;

@@ -119,6 +119,7 @@ public class SalaryAdvanceController extends BaseController {
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
+                request.setLanguage(param.getLanguage());
                 request.setSalaryAdvanceInitRequest(param);
                 request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = salaryAdvanceService.init(request, cust);

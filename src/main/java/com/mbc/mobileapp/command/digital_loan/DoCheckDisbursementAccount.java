@@ -1,16 +1,18 @@
 package com.mbc.mobileapp.command.digital_loan;
 
+import com.mbc.common.api.ApiCustomer;
 import com.mbc.common.bean.ProcessContext;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.entity.ComTransDtlLmt;
+import com.mbc.common.entity.linkAccount.ComLinkAccount;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.object.CustInfo;
 import com.mbc.common.repository.ComTransDtlLmtRepository;
-import com.mbc.common.services.il.nonsavingacct.*;
+import com.mbc.common.services.il.nonsavingacct.AccountBase;
+import com.mbc.common.services.il.nonsavingacct.NonSavingAcctInput;
+import com.mbc.common.services.il.nonsavingacct.PostingRestrict;
 import com.mbc.common.util.Constant;
-import com.mbc.common.util.Utility;
 import com.mbc.common.validator.base.Validator;
-import com.mbc.common.api.ApiCustomer;
 import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.api.CallMsILService;
 import com.mbc.mobileapp.api.model.register.NonSavingAccount;
@@ -18,6 +20,7 @@ import com.mbc.mobileapp.api.model.register.NonSavingAcctDataOutput;
 import com.mbc.mobileapp.command.digital_loan.salary_advance.DoGetCustInfoFromEM;
 import com.mbc.mobileapp.command.digital_loan.salary_advance.DoValidateSalaryCust;
 import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
+import com.mbc.mobileapp.repository.ComLinkAccountRepository;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.bean.CommonServiceResponse;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.ValidDisbursementRequest;
@@ -34,6 +37,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Command duy nhất cho chain POST /digital-loan/valid-disbursement
@@ -45,8 +49,7 @@ import java.util.List;
  *  3b. Luôn gọi getNonSavingAccountListOtherSalary → filter → auto-create nếu rỗng
  *  4. Tính remaining = approveLimit - usedLimit, check > 0
  *  5. Build ValidDisbursementResponse:
- *     - Slider: availableAmount, minAmount, maxAmount, currency, limitEndDate
- *     - accountList: [EMONEY entry từ lmt] + [MBC accounts từ bước 3b]
+ *
  */
 @Slf4j
 @Service
@@ -58,6 +61,7 @@ public class DoCheckDisbursementAccount implements Command {
     private final CallMsILService callMsILService;
     private final DoGetCustInfoFromEM doGetCustInfoFromEM;
     private final DoValidateSalaryCust doValidateSalaryCust;
+    private final ComLinkAccountRepository comLinkAccountRepo;
 
     @Override
     public boolean execute(Context cntxt) throws Exception {
@@ -127,7 +131,7 @@ public class DoCheckDisbursementAccount implements Command {
                 if (stop) return true;
             }
 
-            // ── 3b. Lấy danh sách tài khoản MBC (luôn gọi) 
+            // ── 3b. Lấy danh sách tài khoản MBC (luôn gọi)
             log.info("[DoCheckDisbursementAccount] getNonSavingAccountList, requestId:{}", request.getRequestId());
             List<AccountBase> validAccountList = new ArrayList<>();
 
@@ -197,8 +201,8 @@ public class DoCheckDisbursementAccount implements Command {
                 }
             }
 
-            // ── 4. Tính remaining 
-            BigDecimal approveLimit = lmt.getApproveLimit() != null ? lmt.getApproveLimit() : BigDecimal.ZERO;
+            // ── 4. Tính remaining
+            BigDecimal approveLimit = lmt.getRefer_limit_amount() != null ? lmt.getRefer_limit_amount() : BigDecimal.ZERO;
             BigDecimal usedLimit = lmt.getUsedLimit() != null ? lmt.getUsedLimit() : BigDecimal.ZERO;
             BigDecimal remaining = approveLimit.subtract(usedLimit);
 
@@ -214,24 +218,26 @@ public class DoCheckDisbursementAccount implements Command {
             log.info("[DoCheckDisbursementAccount] OK - remaining:{}, currency:{}, endDate:{}, requestId:{}",
                     remaining, currency, endDate, request.getRequestId());
 
-            // ── 5. Build ValidDisbursementResponse 
+            // ── 5. Build ValidDisbursementResponse
             ValidDisbursementResponse resp = new ValidDisbursementResponse();
-            resp.setTransId(lmt.getId());
+            ValidDisbursementResponse.ValidDisbursementData data = new ValidDisbursementResponse.ValidDisbursementData();
+            data.setTransId(lmt.getId());
 
             // Slider config
-            resp.setAvailableAmount(remaining);
-            resp.setMaxAmount(remaining);
-            resp.setMinAmount(new BigDecimal("50"));
-            resp.setCurrency(currency);
-            resp.setLimitEndDate(endDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+            data.setAvailableAmount(remaining);
+            data.setMaxAmount(remaining);
+            data.setMinAmount(new BigDecimal("50"));
+            data.setCurrency(currency);
+            data.setLimitEndDate(endDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
 
-            // Account list: map trực tiếp từ IL response
-            // participantCode = "EMONEY" → accountType = "EMONEY" (ví eMoney)
-            // participantCode null/blank  → accountType = acctnType từ T24 (OD, CURRENT...)
+            // Account list:
             List<ValidDisbursementResponse.DisbursementAccountInfo> accountInfoList = new ArrayList<>();
-            boolean hasEmoneyFromIL = false;
 
             for (AccountBase acct : validAccountList) {
+                if ("EMONEY".equalsIgnoreCase(acct.getParticipantCode())) {
+                    continue;
+                }
+
                 ValidDisbursementResponse.DisbursementAccountInfo info = new ValidDisbursementResponse.DisbursementAccountInfo();
                 info.setAcctId(acct.getAcctId());
                 info.setAcctnCurrency(acct.getAcctnCurrency());
@@ -240,32 +246,18 @@ public class DoCheckDisbursementAccount implements Command {
                 if (acct.getRelationshipManager() != null && !acct.getRelationshipManager().isEmpty()) {
                     info.setPhoneNo(acct.getRelationshipManager().get(0).getPhoneNo());
                 }
-                info.setParticipantCode(acct.getParticipantCode());
-
-                // Phân loại theo participantCode
-                if ("EMONEY".equalsIgnoreCase(acct.getParticipantCode())) {
-                    info.setAccountType("EMONEY");
-                    hasEmoneyFromIL = true;
-                } else {
-                    info.setAccountType(acct.getAcctnType());
-                }
+//                info.setParticipantCode(acct.getParticipantCode());
+                info.setAccountType(acct.getAcctnType());
                 accountInfoList.add(info);
             }
 
-            // Fallback: nếu IL không trả eMoney account → build từ lmt (đã lưu lúc init-hard code)
-            if (!hasEmoneyFromIL && !Utility.isNull(lmt.getEmCustomerId())) {
-                ValidDisbursementResponse.DisbursementAccountInfo emoneyAcct = new ValidDisbursementResponse.DisbursementAccountInfo();
-                emoneyAcct.setAcctId(lmt.getEmCustomerId());
-                emoneyAcct.setAcctnName(lmt.getFullName());
-                emoneyAcct.setAcctnCurrency(currency);
-                emoneyAcct.setPhoneNo(custInfo.getPhoneNo());
-                emoneyAcct.setAccountType("EMONEY");
-                emoneyAcct.setActual("0");
-                accountInfoList.add(0, emoneyAcct); // đặt lên đầu danh sách
-            }
+            // ── Kiểm tra trạng thái Link eMoney (Mapping 1-1 với init-sdk) ──
+            Optional<ComLinkAccount> optLinkAcc = comLinkAccountRepo.findByCustomerCodeAndPartnerCode(custInfo.getHostCifId(), "EMONEY");
+            String isLinked = optLinkAcc.isPresent() && "LINKED".equals(optLinkAcc.get().getStatus()) ? "Y" : "N";
+            data.setIsLinkedAccount(isLinked);
 
-
-            resp.setAccountList(accountInfoList);
+            data.setAccountList(accountInfoList);
+            resp.setData(data);
             response.setValidDisbursementResponse(resp);
 
         } catch (Exception e) {

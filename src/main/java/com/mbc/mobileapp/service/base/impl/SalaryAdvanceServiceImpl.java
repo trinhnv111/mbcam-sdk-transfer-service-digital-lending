@@ -214,9 +214,9 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
         if (currentAddress != null) {
             output.setCurrentCountry(getCountryNameFromRepo(currentAddress.getCountryCode(), currentAddress.getCountry(), language));
             if ("CAMBODIA".equalsIgnoreCase(currentAddress.getCountry())) {
-                output.setCurrentProvince(currentAddress.getProvinceCode());
-                output.setCurrentDistrict(currentAddress.getDistrictCode());
-                output.setCurrentCommune(currentAddress.getWardCode());
+                output.setCurrentProvince(Utility.isNull(currentAddress.getProvinceCode()) ? null : currentAddress.getProvinceCode());
+                output.setCurrentDistrict(Utility.isNull(currentAddress.getDistrictCode()) ? null : currentAddress.getDistrictCode());
+                output.setCurrentCommune(Utility.isNull(currentAddress.getWardCode()) ? null : currentAddress.getWardCode());
                 output.setCurrentProvinceName(output.getCurrentProvince() != null ? "" : null);
                 output.setCurrentDistrictName(output.getCurrentDistrict() != null ? "" : null);
                 output.setCurrentCommuneName(output.getCurrentCommune() != null ? "" : null);
@@ -255,9 +255,9 @@ public class SalaryAdvanceServiceImpl extends ServiceBase implements SalaryAdvan
                     || "CAMBODIA".equalsIgnoreCase(residenceCountryName) && "KH".equalsIgnoreCase(residenceAddress.getCountryCode());
 
             if (isCambodia) {
-                output.setPlaceOfBirthProvince(residenceAddress.getProvinceCode());
-                output.setPlaceOfBirthDistrict(residenceAddress.getDistrictCode());
-                output.setPlaceOfBirthCommune(residenceAddress.getWardCode());
+                output.setPlaceOfBirthProvince(Utility.isNull(residenceAddress.getProvinceCode()) ? null : residenceAddress.getProvinceCode());
+                output.setPlaceOfBirthDistrict(Utility.isNull(residenceAddress.getDistrictCode()) ? null : residenceAddress.getDistrictCode());
+                output.setPlaceOfBirthCommune(Utility.isNull(residenceAddress.getWardCode()) ? null : residenceAddress.getWardCode());
                 output.setPlaceOfBirthProvinceName(output.getPlaceOfBirthProvince() != null ? "" : null);
                 output.setPlaceOfBirthDistrictName(output.getPlaceOfBirthDistrict() != null ? "" : null);
                 output.setPlaceOfBirthCommuneName(output.getPlaceOfBirthCommune() != null ? "" : null);

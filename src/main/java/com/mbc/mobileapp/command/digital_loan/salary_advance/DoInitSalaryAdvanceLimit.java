@@ -120,15 +120,13 @@ public class DoInitSalaryAdvanceLimit implements Command {
 //                tempRecord.setMonthlySalaryAmountUsd(emSalaryInfo.getSalary3mAvgUSD());
 //                tempRecord.setMonthlyIncome(emSalaryInfo.getSalary3mAvgUSD());
             }
-
+            tempRecord.setOccupation(emCustInfo.getCurrentOccupation());
+            tempRecord.setEMCustomerID(emCustInfo.getCustomerId());
             tempRecord.setLoanType(SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE);
             tempRecord.setStep(Constant.COM_STATUS_INT);
             tempRecord.setStatus(Constant.COM_STATUS_INT);
 
-            // Lưu emCustomerId từ eMoney response
-            if (emCustInfo != null && !Utility.isNull(emCustInfo.getCustomerId())) {
-                tempRecord.setEmCustomerId(emCustInfo.getCustomerId());
-            }
+
 
             comTransDtlLmtRepo.saveAndFlush(tempRecord);
 

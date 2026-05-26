@@ -104,21 +104,19 @@ public class DoCreateLoan implements Command {
 
             MsLoanCreateRequest msRequest = MsLoanCreateRequest.builder()
                     // Thông tin KH
-                    .customerCode(custInfo.getHostCifId())
+                    .customerCode(lmt.getHostCifId())
                     .customerName(lmt.getFullName())
-                    .rmCode(lmt.getRmCode())
-                    .phoneNumber(custInfo.getPhoneNo())
+                    .phoneNumber(lmt.getPhoneNumber())
                     .occupation(lmt.getOccupation())
-                    .selfEmployment("N") // TODO: lấy từ data thực nếu có
                     .employmentDate(employmentDateStr)
                     .monthlySalary(lmt.getMonthlyIncome())
                     .salaryCurrency(lmt.getCurrency())
                     // Thông tin khoản vay
                     .loanAmount(registration.getLoanAmount())
                     .loanCurrency(loanCurrency)
-                    .loanInterest(lmt.getInterestRate())
                     .valueDate(valueDateStr)
                     .maturityDate(maturityDateStr)
+                    .loanInterest(BigDecimal.valueOf(0))
                     .channel("SDK.RETAIL")
                     .product("DIGITAL_LOAN")
                     .subProduct("SALARY_ADVANCE")
@@ -158,29 +156,27 @@ public class DoCreateLoan implements Command {
                 return !result.isOk();
             }
 
-            // ── Lưu vào context để các bước sau dùng ──────────────────
-            context.put("ld_id", createOut.getLdId());
-            context.put("drawdown_account", createOut.getDrawdownAccount());
-            context.put("loan_transaction_id", createOut.getTransactionId());
-            context.put("loan_currency", createOut.getDrawdownAccountCurrency());
-            // loanFee từ MS Loan (phí MS Loan thu ở bước 7 luồng tạo khoản vay)
-            context.put("loan_fee", createOut.getLoanFee());
-            // actualLoanAmount = loanAmount - loanFee (số tiền thực nhận)
-            context.put("actual_loan_amount", createOut.getActualLoanAmount());
+            //  context
+//            context.put("ld_id", createOut.getLdId());
+//            context.put("drawdown_account", createOut.getDrawdownAccount());
+//            context.put("loan_transaction_id", createOut.getTransactionId());
+//            context.put("loan_currency", createOut.getDrawdownAccountCurrency());
+//            context.put("loan_fee", createOut.getLoanFee());
+//            context.put("actual_loan_amount", createOut.getActualLoanAmount());
 
-            // ── Cập nhật Registration ──────────────────────────────────
+            context.put("ms_loan_response",createOut);
+
+            //  Cập nhật Registration 
             registration.setLdId(createOut.getLdId());
             registration.setLimitId(createOut.getLimitId());
             registration.setCreditContractId(createOut.getCreditContractId());
             registration.setStep("CREATE_LOAN");
-            // Lưu phí từ MS Loan vào Registration để DoDisbursement build success screen
             if (!Utility.isNull(createOut.getLoanFee())) {
                 registration.setCbcFee(new BigDecimal(createOut.getLoanFee()));
             }
             registrationRepo.save(registration);
 
-            // ── Tạo ComTransDtlLoanDisbursement ───────────────────────
-            // Record này bắt buộc phải tồn tại trước khi DoDisbursement chạy
+            //  Tạo ComTransDtlLoanDisbursement 
             String currency = createOut.getDrawdownAccountCurrency() != null
                     ? createOut.getDrawdownAccountCurrency() : loanCurrency;
             BigDecimal amount = registration.getLoanAmount() != null

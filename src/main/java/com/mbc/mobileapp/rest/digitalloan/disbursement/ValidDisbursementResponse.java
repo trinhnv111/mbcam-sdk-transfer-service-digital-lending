@@ -11,59 +11,44 @@ import java.util.List;
 @Setter
 public class ValidDisbursementResponse extends BaseResponse {
 
-    /** ID của hạn mức (ComTransDtlLmt.id) — FE dùng để gửi vào /disbursement */
-    private String transId;
+    private ValidDisbursementData data;
 
-    // ─── Slider config ───────────────────────────────────────────────
-    /** Số tiền khả dụng còn lại = approveLimit - usedLimit */
-    private BigDecimal availableAmount;
+    @Getter
+    @Setter
+    public static class ValidDisbursementData {
 
-    /** Loại tiền của hạn mức: USD / KHR */
-    private String currency;
+        public String transId;
 
-    /** Ngày hết hạn hạn mức (YYYY-MM-DD) — hiển thị trên UI để KH biết hạn */
-    private String limitEndDate;
+        public BigDecimal availableAmount;
 
-    /** Số tiền tối thiểu có thể rút (min của slider) */
-    private BigDecimal minAmount;
+        public String currency;
 
-    /** Số tiền tối đa có thể rút (max của slider = availableAmount) */
-    private BigDecimal maxAmount;
+        public String limitEndDate;
 
-    // ─── Danh sách tài khoản ─────────────────────────────────────────
-    /**
-     * Danh sách tài khoản để FE hiển thị Bottom Sheet:
-     *  - accountType = "EMONEY"   → ví eMoney (nhóm "eMoney accounts")
-     *  - accountType = "MBC"      → tài khoản MBC (nhóm "MBCambodia accounts")
-     */
-    private List<DisbursementAccountInfo> accountList;
+        public BigDecimal minAmount;
+
+        public BigDecimal maxAmount;
+
+        public List<DisbursementAccountInfo> accountList;
+
+        public String isLinkedAccount;
+    }
 
     @Getter
     @Setter
     public static class DisbursementAccountInfo {
-        /** Số tài khoản / walletId */
-        private String acctId;
+        public String acctId;
 
-        /** Tên tài khoản / tên chủ ví */
-        private String acctnName;
+        public String acctnName;
 
-        /** Loại tiền */
-        private String acctnCurrency;
+        public String acctnCurrency;
 
-        /** Số dư hiện tại */
-        private String actual;
+        public String actual;
 
-        /** Số điện thoại liên kết (eMoney) */
-        private String phoneNo;
+        public String phoneNo;
 
-        /** Mã ngân hàng / tổ chức (dùng cho CIFTP) */
-        private String participantCode;
+//        public String participantCode;
 
-        /**
-         * Loại tài khoản:
-         *  "EMONEY" → ví eMoney linked account
-         *  "MBC"    → tài khoản thanh toán MBC
-         */
-        private String accountType;
+        public String accountType;
     }
 }

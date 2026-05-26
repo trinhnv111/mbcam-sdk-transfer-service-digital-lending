@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class DisburseInfData {
+    private String transId;
     private LoanInformation loanInformation;
     private CustomerInformation customerInformation;
 }

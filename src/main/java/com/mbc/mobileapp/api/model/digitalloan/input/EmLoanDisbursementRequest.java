@@ -10,22 +10,31 @@ import lombok.Data;
 @Data
 @Builder
 public class EmLoanDisbursementRequest {
-    /** ID khoản nợ trên MBC (= ldId từ MS Loan) */
+
+    // ID khoản nợ trên MBC (= ldId từ MS Loan)
     private String MBCLoanId;
-    /** Mã hóa RSA: msisdn|idNumber */
+
+    // Mã hóa RSA: msisdn|idNumber
     private String encrypt;
-    /** ID khách hàng trên eMoney (emCustomerId lưu trong COM_LOAN_DISBUR_LMT) */
+
+    // ID khách hàng trên eMoney (emCustomerId lưu trong COM_LOAN_DISBUR_LMT)
     private String customerId;
-    /** Số tiền giải ngân */
+
+    // Số tiền giải ngân
     private String amount;
-    /** Loại tiền (KHR/USD) */
+
+    // Loại tiền (KHR/USD)
     private String currency;
-    /** Ngày giải ngân thực tế (yyyy-MM-dd) */
+
+    // Ngày giải ngân thực tế (yyyy-MM-dd)
     private String disbursementDate;
-    /** Ngày đến hạn trả nợ (yyyy-MM-dd) */
+
+    // Ngày đến hạn trả nợ (yyyy-MM-dd)
     private String dueDate;
-    /** transHash của giao dịch Bakong/CIFTP (TH2 ví eMoney) */
+
+    // transHash của giao dịch Bakong/CIFTP (TH2 ví eMoney)
     private String transHash;
-    /** Tên công ty của khách hàng */
+
+    // Tên công ty của khách hàng
     private String companyName;
 }

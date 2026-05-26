@@ -12,7 +12,6 @@ import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.*;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
-
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentResponse;
 import com.mbc.mobileapp.service.base.DigitalLoanService;
@@ -348,9 +347,8 @@ public class DigitalLoanController extends BaseController {
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_LOAN_OD_DISBURSEMENT);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 request.setTransId(param.getTransId());
-                // Gắn toàn bộ disbursementRequest để chain đọc
                 request.setDisbursementRequest(param);
                 // Token OTP cho ValidateOTP command
                 if (param.getTokenOTP() != null) {
@@ -413,21 +411,15 @@ public class DigitalLoanController extends BaseController {
         return resp;
     }
 
-    /**
-     * Tạo hợp đồng giải ngân (PDF ENG + KHR) và upload lên FTS
-     * Flow: SDK BE → BIRT → FTS → (ECM) → docId
-     *
-     * @param requestClient HttpServletRequest
-     * @return DisbursementResponse (data = DoGenFileOutput chứa fileContentEng + fileContentKhr)
-     */
-    @ApiOperation("Api gen file contract disbursement")
-    @PostMapping("/genfile")
+
+    @ApiOperation("Api Gen File ")
+    @PostMapping("/gen-file")
     public DisbursementResponse<Object> genFile(@RequestBody GenFileRequest param,
                                                 HttpServletRequest requestClient) {
         DisbursementResponse<Object> resp = new DisbursementResponse<>();
         Result result;
 
-//        /* TODO: Bật mã hóa DynamicKey khi production
+//
 //        if (dynKeyEnabled) {
 //            DynamicKeyResponse<GenFileRequest> dynResponse = dynDecryptData1(dynRequest, GenFileRequest.class);
 //            param = dynResponse.getData();

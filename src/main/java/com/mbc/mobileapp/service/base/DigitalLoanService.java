@@ -27,6 +27,6 @@ public interface DigitalLoanService {
 
     DisbursementInformationResponse disbursementInformation(CommonServiceRequest request, CustInfo cust);
 
-    DisbursementResponse<Object> genFile(CommonServiceRequest request, CustInfo cust);
+    DisbursementResponse<Object> genFile (CommonServiceRequest request, CustInfo cust);
 
 }

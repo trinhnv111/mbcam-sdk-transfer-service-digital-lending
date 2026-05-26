@@ -58,18 +58,32 @@ public class DoGetLoanInfo implements Command {
             DisbursementInformationRequest disbursementInformationRequest = request.getDigitalLoanRequest();
             BigDecimal referAmount = new BigDecimal(disbursementInformationRequest.getReferLoanAmount()) ;
 
-            BigDecimal fee = context.getVar("fee", BigDecimal.class);
-            Double feeDouble = context.getVar("fee", Double.class);
-            if (feeDouble == null) {
-                log.error("[LOAN INFO] fee is null in context, requestId: {}", request.getRequestId());
-                result = new SimpleResult("Không tìm thấy phí", false, ResponseCode.TRANSACTION_FAIL.getCode());
-                context.setResult(result);
-                return !result.isOk();
-            }
-            BigDecimal feeB = BigDecimal.valueOf(feeDouble);
-            BigDecimal loanfee = referAmount.multiply(feeB);
+            Object feeObj = context.getVar("fee");
+            BigDecimal fee;
 
-            // ── ComTrans (transaction header) ──────────────────────────
+            if (feeObj == null) {
+                fee = BigDecimal.valueOf(0.05);
+            } else {
+                try {
+                    fee = (feeObj instanceof BigDecimal)
+                            ? (BigDecimal) feeObj
+                            : new BigDecimal(String.valueOf(feeObj));
+                } catch (Exception e) {
+                    log.error("[LOAN INFO] Invalid fee value: {}", feeObj, e);
+
+                    result = new SimpleResult(
+                            "Sai dữ liệu fee",
+                            false,
+                            ResponseCode.TRANSACTION_FAIL.getCode()
+                    );
+
+                    context.setResult(result);
+                    return !result.isOk();
+                }
+            }
+            BigDecimal loanfee = referAmount.subtract(fee);
+
+            //  ComTrans
             ComTrans comTrans = new ComTrans();
             comTrans.setSessionId(request.getSessionId());
             comTrans.setCustId(custInfo.getId());
@@ -80,14 +94,14 @@ public class DoGetLoanInfo implements Command {
             comTrans.setTransactionType("INHOUSE");
             comTransRepo.saveAndFlush(comTrans);
 
-            // ── ComTransProcess ─────────────────────────────────────────
+            //  ComTransProcess
             ComTransProcess comTransProcess = new ComTransProcess();
             comTransProcess.setStatus(Constant.COM_STATUS_INT);
             comTransProcess.setTransId(comTrans.getId());
             comTransProcess.setSrvcCd(comTrans.getSrvcCd());
             comTransProcessRepo.saveAndFlush(comTransProcess);
 
-            // ── ComTransDtlLoanRegistration ─────────────────────────────
+            //  ComTransDtlLoanRegistration
             ComTransDtlLoanRegistration comTransDtlLoanRegistration = new ComTransDtlLoanRegistration();
             comTransDtlLoanRegistration.setId(comTrans.getId()); // dùng comTrans.id làm PK
             comTransDtlLoanRegistration.setHostCifId(comTransDtlLmt.getHostCifId());
@@ -107,6 +121,7 @@ public class DoGetLoanInfo implements Command {
             comTransDtlLoanRegistration.setLoanAmount(referAmount);
             comTransDtlLoanRegistration.setReferrerPhone(disbursementInformationRequest.getReferrerPhone());
             comTransDtlLoanRegistration.setDisbursementAccount(disbursementInformationRequest.getDisbursementAccountType());
+            comTransDtlLoanRegistration.setLimitId(comTransDtlLmt.getId());
             comTransDtlLoanRegistrationRepository.saveAndFlush(comTransDtlLoanRegistration);
 
             // Lưu transId vào context để genFile dùng
@@ -135,27 +150,28 @@ public class DoGetLoanInfo implements Command {
             customerInfo.setPlaceOfBrith(address);
 
 
-            BigDecimal receivingAmount = referAmount.subtract(loanfee); // 900 - 2 = 898
+            BigDecimal receivingAmount = referAmount.subtract(loanfee);
 
             LoanInformation loanInfo = new LoanInformation();
-            loanInfo.setReferLoanLimit(referAmount.toPlainString());          // 900.00
-            loanInfo.setFee(loanfee.toPlainString());                         // 2.00 (số tiền phí thực tế)
-            loanInfo.setReceivingAmount(receivingAmount.toPlainString());     // 898.00
+            loanInfo.setReferLoanLimit(referAmount.toPlainString());
+            loanInfo.setFee(loanfee.toPlainString());
+            loanInfo.setReceivingAmount(receivingAmount.toPlainString());
             loanInfo.setDueDate(String.valueOf(comTransDtlLmt.getEndDate()));
 
             // 3. Đóng gói vào DisburseInfData
             DisburseInfData disburseInfData = new DisburseInfData();
+            disburseInfData.setTransId(comTrans.getId());
             disburseInfData.setCustomerInformation(customerInfo);
             disburseInfData.setLoanInformation(loanInfo);
 
             DisbursementInformationResponse disbursementResponse = new DisbursementInformationResponse();
-            disbursementResponse.setTransId(comTrans.getId()); // FE dùng để gửi lên /genfile
+//            disbursementResponse.setData(disburseInfData.getTransId());
             disbursementResponse.setData(disburseInfData);
 
             response.setDisbursementInformationResponse(disbursementResponse);
 
         } catch (Exception e) {
-            log.error("[EXCEPTION GET OD LOAN] requestId: {}, desc: ", request.getRequestId(), e);
+            log.error("[EXCEPTION GET LOAN INFO] requestId: {}, desc: ", request.getRequestId(), e);
             result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false, ResponseCode.TRANSACTION_FAIL.getCode());
         }
         context.setResult(result);
