@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+	<Appenders>
+		<Console name="ConsoleLog" target="SYSTEM_OUT">
+			<PatternLayout
+				pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5level %logger{36} [%t] %msg%n" />
+		</Console>
+
+		<RollingRandomAccessFile name="InfoLogFile"
+			fileName="logs/app.log"
+			filePattern="logs/$${date:yyyy-MM-dd}/app-%d{yyyy-MM-dd}-%i.log.gz">
+			<PatternLayout>
+				<Pattern>%d %p %c{10} [%t] %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="200 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="100" />
+		</RollingRandomAccessFile>
+
+		<RollingRandomAccessFile name="ErrorLogFile"
+			fileName="logs/error.log"
+			filePattern="logs/$${date:yyyy-MM-dd}/error-%d{yyyy-MM-dd}-%i.log.gz">
+			<PatternLayout>
+				<Pattern>%d %p %c{10} [%t] %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="200 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="100" />
+		</RollingRandomAccessFile>
+
+		<Kafka name="Kafka" topic="app-khcn" target="SYSTEM_OUT" syncSend="false">
+			<Property name="bootstrap.servers">10.1.37.31:9092,10.1.37.32:9092,10.1.37.33:9092
+			</Property>
+			<!-- <Property name="acks">1</Property> -->
+			<JSONLayout compact="true" properties="true">
+				<KeyValuePair key="application"
+					value="${bundle:application:spring.application.name}" />
+				<KeyValuePair key="localIp" value="${sys:localIpValue}" />
+				<KeyValuePair key="CustomTimestamp"
+					value="$${date:yyyy-MM-dd HH:mm:ss.SSSZ}" />
+			</JSONLayout>
+		</Kafka>
+		<Async name="Async">
+			<AppenderRef ref="Kafka" />
+		</Async>
+
+	</Appenders>
+	<Loggers>
+		<!-- avoid duplicated logs with additivity=false -->
+
+		<Logger name="infoLogger" additivity="false" level="debug">
+			<AppenderRef ref="InfoLogFile" />
+			<AppenderRef ref="ConsoleLog" />
+		</Logger>
+
+		<Logger name="errorLogger" additivity="false" level="error">
+			<AppenderRef ref="ErrorLogFile" />
+			<AppenderRef ref="ConsoleLog" />
+		</Logger>
+
+		<Logger name="org.apache.kafka" level="WARN" />
+		
+		<AsyncRoot level="info" includeLocation="false">
+			<AppenderRef ref="InfoLogFile" level="info" />
+			<AppenderRef ref="ConsoleLog" />
+			<AppenderRef ref="ErrorLogFile" level="error" />
+			<AppenderRef ref="Kafka" />
+		</AsyncRoot>
+
+
+		<!-- <AsyncLogger name="com.netflix.discovery.shared.resolver.aws.ConfigClusterResolver" 
+			level="error" additivity="false"> <AppenderRef ref="ConsoleAppender" /> <AppenderRef 
+			ref="FileAppender" /> <AppenderRef ref="KafkaAppender" /> </AsyncLogger> 
+			<AsyncRoot level="info" includeLocation="false"> <AppenderRef ref="ConsoleAppender" 
+			/> <AppenderRef ref="FileAppender" /> <AppenderRef ref="KafkaAppender" /> 
+			</AsyncRoot> -->
+
+
+	</Loggers>
+</Configuration>
