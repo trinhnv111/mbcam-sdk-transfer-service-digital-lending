@@ -107,7 +107,7 @@ public class SalaryAdvanceController extends BaseController {
 //            }
 //        }
 //        log.info("[SDK SALARY ADVANCE INIT] input data: {}", JSON.stringify(param));
-//        // validation
+        // validation
         result = validate(param);
         if (!result.isOk()) {
             resp.setResult(result);
@@ -119,8 +119,8 @@ public class SalaryAdvanceController extends BaseController {
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
-                request.setSalaryAdvanceInitRequest(param);
                 request.setLanguage(param.getLanguage());
+                request.setSalaryAdvanceInitRequest(param);
                 request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 resp = salaryAdvanceService.init(request, cust);
             }

@@ -46,7 +46,7 @@ public class DoValidateSalaryCust implements Command {
             log.info("[SA INIT - VALIDATE] Start - requestId:{}", request.getRequestId());
 
             EmCustomerInfo emCustInfo = (EmCustomerInfo) processContext.get("emCustomerInfo");
-            EmSalaryInfo emSalaryInfo = (EmSalaryInfo) processContext.get("emSalaryInfo");
+//            EmSalaryInfo emSalaryInfo = (EmSalaryInfo) processContext.get("emSalaryInfo");
 
             if (Objects.isNull(emCustInfo)) {
                 log.error("[SA INIT - VALIDATE] emCustomerInfo is null");

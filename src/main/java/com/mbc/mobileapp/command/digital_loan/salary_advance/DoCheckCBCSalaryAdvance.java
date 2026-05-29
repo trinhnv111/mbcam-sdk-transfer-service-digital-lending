@@ -107,7 +107,7 @@ public class DoCheckCBCSalaryAdvance implements Command {
                     || "reject".equals(history) || "no information".equals(history)) {
                 log.info("[DoCheckCBCSalaryAdvance] TH2: PASS - historyOneYear={} - requestId:{}",
                         historyOneYear, request.getRequestId());
-                return !result.isOk();
+                // result stays OK → chain continues
             } else {
                 /**
                  * TH1: historyOneYear != normal/closed/reject/no information

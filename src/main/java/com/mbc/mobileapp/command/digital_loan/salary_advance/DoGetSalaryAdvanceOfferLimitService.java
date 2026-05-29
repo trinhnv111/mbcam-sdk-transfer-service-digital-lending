@@ -17,10 +17,10 @@ import org.apache.commons.chain.Context;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 
-import static org.aspectj.bridge.Version.SIMPLE_DATE_FORMAT;
-
+import static com.mbc.mobileapp.constant.format.DateFormat.SIMPLE_DATE_FORMAT;
 
 @Service
 @Slf4j
@@ -41,7 +41,7 @@ public class DoGetSalaryAdvanceOfferLimitService implements Command {
             limitData.setRemainingLimit(approveLimit.subtract(usedLimit));
             limitData.setCurrency(comTransDtlLmt.getCurrency());
             if (comTransDtlLmt.getEndDate() != null) {
-                limitData.setEndDate(SIMPLE_DATE_FORMAT.format(String.valueOf(comTransDtlLmt.getEndDate())));
+                limitData.setEndDate(SIMPLE_DATE_FORMAT.format(comTransDtlLmt.getEndDate()));
             }
         }
         return limitData;

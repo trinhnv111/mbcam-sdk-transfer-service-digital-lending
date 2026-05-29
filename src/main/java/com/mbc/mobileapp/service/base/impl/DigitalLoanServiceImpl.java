@@ -152,9 +152,9 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
 
 
     @Override
-    public DisbursementResponse<Object> disbursement(Request request, CustInfo cust) {
+    public DisbursementResponse<Object> disbursement(Request request, CustInfo cust, TokenOtp otp) {
         ProcessContext context = loadContext(request, cust);
-//        context.putVar(Constant.KeyVar.OTP, tokenOtp);
+        context.putVar(Constant.KeyVar.OTP, otp);
         DisbursementResponse<Object> response = new DisbursementResponse<>();
         Validator.Result result;
         try {
@@ -197,6 +197,12 @@ public class DigitalLoanServiceImpl extends ServiceBase implements DigitalLoanSe
         }
         return response;
 
+    }
+
+    @Override
+    public DisbursementResponse<Object> genFile(CommonServiceRequest request, CustInfo cust) {
+        //TODO
+        return null;
     }
 
 }

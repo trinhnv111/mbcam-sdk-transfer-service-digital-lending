@@ -2,9 +2,8 @@ package com.mbc.mobileapp.rest.digitalloan.disbursement;
 
 import com.mbc.common.rest.bean.BaseRequest;
 import lombok.Data;
-
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+
 
 @Data
 public class DisbursementInformationRequest extends BaseRequest {
@@ -17,7 +16,7 @@ public class DisbursementInformationRequest extends BaseRequest {
     private String selectedAmountNo;
     @NotBlank
     private String disbursementAccountType;
-    @NotBlank
+
     private String referrerPhone;
 
 

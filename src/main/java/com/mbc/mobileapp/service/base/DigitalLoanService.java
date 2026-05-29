@@ -23,9 +23,10 @@ public interface DigitalLoanService {
 
     ValidDisbursementResponse validDisbursement(CommonServiceRequest request, CustInfo cust);
 
-    DisbursementResponse<Object> disbursement(Request request, CustInfo cust);
+    DisbursementResponse<Object> disbursement(Request request, CustInfo cust,TokenOtp otp);
 
     DisbursementInformationResponse disbursementInformation(CommonServiceRequest request, CustInfo cust);
 
+    DisbursementResponse<Object> genFile (CommonServiceRequest request, CustInfo cust);
 
 }

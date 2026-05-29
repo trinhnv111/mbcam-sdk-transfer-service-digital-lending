@@ -3,6 +3,7 @@ package com.mbc.mobileapp.api;
 import com.mbc.common.api.CallMicroService;
 import com.mbc.common.il.base.ExecuteT24Output;
 import com.mbc.common.util.Utility;
+import com.mbc.mobileapp.api.model.digitalloan.input.MsLoanCreateRequest;
 import com.mbc.mobileapp.api.model.digitalloan.output.*;
 import com.mbc.mobileapp.api.model.salary_advance.input.MsLoanOfferLimitRequest;
 import com.mbc.mobileapp.api.model.salary_advance.output.MsLoanOfferLimitResponse;
@@ -124,10 +125,6 @@ public class ApiMsLoan extends CallMicroService {
         }
     }
 
-
-    /**
-     * Gọi MS Loan API tính phí.
-     */
     /**
      * Gọi MS Loan API tính phí.
      */
@@ -159,6 +156,29 @@ public class ApiMsLoan extends CallMicroService {
 
         mappingErrorCode(output);
         return output;
+    }
+
+    /**
+     * Gọi MS Loan API thực hiện giải ngân .
+     */
+
+    public ExecuteT24Output<MsLoanCreateOutput> createLoan(MsLoanCreateRequest request,
+                                                           String custId, String requestId) {
+        try {
+            String msgId = Utility.getUUID();
+            HttpHeaders headers = buildHeader(custId, requestId, msgId);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String url = getUrl("microservice.ms-loan.host") + getUrl("microservice.ms-loan.create-loan");
+            log.info("[ApiMsLoan] createLoan - url:{}, customerCode:{}", url, request.getCustomerCode());
+            ExecuteT24Output<MsLoanCreateOutput> output = postForMicroService(
+                    url, headers, request,
+                    new ParameterizedTypeReference<ExecuteT24Output<MsLoanCreateOutput>>() {});
+            mappingErrorCode(output);
+            return output;
+        } catch (Exception e) {
+            log.error("[ApiMsLoan] Exception createLoan: ", e);
+            return null;
+        }
     }
 
 

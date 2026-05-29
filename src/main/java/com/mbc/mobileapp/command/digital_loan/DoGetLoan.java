@@ -57,32 +57,32 @@ public class DoGetLoan implements Command {
                 if (Constant.CALL_MICROSERVICE_SUCCESS.equals(executeT24Output.getStatus())) {
                     GetLoanOutput getLoan = executeT24Output.getData();
 
-                    // Thêm phần mock data nếu ldList bị null hoặc empty
-                    if (getLoan != null && (getLoan.getLdList() == null || getLoan.getLdList().isEmpty())) {
-                        log.info("[DoGetLoan] LD list is empty, injecting mock data...");
-                        com.mbc.mobileapp.api.model.digitalloan.output.LdItem mockLd = new com.mbc.mobileapp.api.model.digitalloan.output.LdItem();
-                        mockLd.setLdId("LD2316093070");
-                        mockLd.setAmount(new BigDecimal("302430.1"));
-                        mockLd.setMaturityDate("2026-06-09");
-                        mockLd.setCurrency("USD");
-                        mockLd.setValueDate("2023-06-09");
-                        mockLd.setBranchCode("KH0010001");
-                        mockLd.setTotalRepayPrinAmt(new BigDecimal("2197569.9"));
-                        mockLd.setPartner("MBC");
-                        mockLd.setChannel("");
-                        mockLd.setAmountHits(new BigDecimal("802430.1"));
-
-                        com.mbc.mobileapp.api.model.digitalloan.output.PdData pd = new com.mbc.mobileapp.api.model.digitalloan.output.PdData();
-                        pd.setPdId("PDLD2316093070");
-                        pd.setSubProduct("390");
-                        pd.setPrAmt("");
-                        pd.setInAmt("");
-                        pd.setPeAmt(null);
-                        pd.setPsAmt("");
-                        mockLd.setPdList(java.util.Collections.singletonList(pd));
-
-                        getLoan.setLdList(java.util.Collections.singletonList(mockLd));
-                    }
+//                    // Thêm phần mock data nếu ldList bị null hoặc empty
+//                    if (getLoan != null && (getLoan.getLdList() == null || getLoan.getLdList().isEmpty())) {
+//                        log.info("[DoGetLoan] LD list is empty, injecting mock data...");
+//                        com.mbc.mobileapp.api.model.digitalloan.output.LdItem mockLd = new com.mbc.mobileapp.api.model.digitalloan.output.LdItem();
+//                        mockLd.setLdId("LD2316093070");
+//                        mockLd.setAmount(new java.math.BigDecimal("302430.1"));
+//                        mockLd.setMaturityDate("2026-06-09");
+//                        mockLd.setCurrency("USD");
+//                        mockLd.setValueDate("2023-06-09");
+//                        mockLd.setBranchCode("KH0010001");
+//                        mockLd.setTotalRepayPrinAmt(new java.math.BigDecimal("2197569.9"));
+//                        mockLd.setPartner("MBC");
+//                        mockLd.setChannel("");
+//                        mockLd.setAmountHits(new BigDecimal("802430.1"));
+//
+//                        com.mbc.mobileapp.api.model.digitalloan.output.PdData pd = new com.mbc.mobileapp.api.model.digitalloan.output.PdData();
+//                        pd.setPdId("PDLD2316093070");
+//                        pd.setSubProduct("390");
+//                        pd.setPrAmt("");
+//                        pd.setInAmt("");
+//                        pd.setPeAmt(null);
+//                        pd.setPsAmt("");
+//                        mockLd.setPdList(java.util.Collections.singletonList(pd));
+//
+//                        getLoan.setLdList(java.util.Collections.singletonList(mockLd));
+//                    }
 
                     T24DayNowOutput = apiCustomer.genT24DayNow(custId, request.getRequestId());
                     if (Objects.isNull(T24DayNowOutput)) {

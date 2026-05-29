@@ -1,218 +1,314 @@
-package com.mbc.mobileapp.command.digital_loan;//package com.mbc.mobileapp.command.digital_loan;
-//
-//import com.mbc.common.bean.ProcessContext;
-//import com.mbc.common.bean.ResponseCode;
-//import com.mbc.common.entity.ComTransDtlLoanDisbursement;
-//import com.mbc.common.entity.ComTransDtlLoanRegistration;
-//import com.mbc.common.entity.ComTransDtlLmt;
-//import com.mbc.common.il.base.ExecuteT24Output;
-//import com.mbc.common.object.CustInfo;
-//import com.mbc.common.repository.ComTransDtlLoanDisbursementRepo;
-//import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
-//import com.mbc.common.repository.ComTransDtlLmtRepository;
-//import com.mbc.common.util.Constant;
-//import com.mbc.common.util.Utility;
-//import com.mbc.common.validator.base.Validator;
-//import com.mbc.gateway.validator.result.SimpleResult;
-//import com.mbc.mobileapp.api.ApiMsLoan;
-//import com.mbc.mobileapp.api.model.digitalloan.input.MsLoanCreateRequest;
-//import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanCreateOutput;
-//import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
-//import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
-//import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
-//import lombok.RequiredArgsConstructor;
-//import lombok.extern.slf4j.Slf4j;
-//import org.apache.commons.chain.Command;
-//import org.apache.commons.chain.Context;
-//import org.springframework.stereotype.Service;
-//
-//import java.math.BigDecimal;
-//
-///**
-// * Step: Hạch toán Core — Gọi MS Loan createLoan → T24 mở LD account
-// *
-// * Input từ context:
-// *   - request.getDisbursementRequest() → disburseAmount, selectedAccountNumber, disbursementType
-// *   - "registration_id" (UUID của ComTransDtlLoanRegistration tạo ở DoGetLoanInfo)
-// *
-// * Output vào context:
-// *   - "ld_id"              → mã khoản vay T24 (dùng cho eMoney push + MakeTransfer)
-// *   - "drawdown_account"   → working account nhận giải ngân (dùng cho MakeTransfer TH1)
-// *   - "loan_transaction_id"→ transactionId làm remark FT
-// *
-// */
-//@Service
-//@Slf4j
-//@RequiredArgsConstructor
-//public class DoCreateLoan implements Command {
-//
-//    private final ApiMsLoan apiMsLoan;
-//    private final ComTransDtlLoanRegistrationRepo registrationRepo;
-//    private final ComTransDtlLoanDisbursementRepo disbursementRepo;
-//    private final ComTransDtlLmtRepository comTransDtlLmtRepository;
-//
-//    @Override
-//    public boolean execute(Context cntxt) throws Exception {
-//        ProcessContext context = (ProcessContext) cntxt;
-//        Validator.Result result = Validator.Result.OK;
-//        CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
-//        CustInfo custInfo = context.getCustomer();
-//
-//        try {
-//            DisbursementRequest disbReq = request.getDisbursementRequest();
-//
-//            // Lấy registration record để lấy docIdEng, loanAmount, loanDueDate
-//            String registrationId = (String) context.get("registration_id");
-//            ComTransDtlLoanRegistration registration = null;
-//            if (!Utility.isNull(registrationId)) {
-//                registration = registrationRepo.findByIdAndStatus(registrationId, Constant.COM_STATUS_INT);
-//            }
-//            if (registration == null) {
-//                log.error("[DoCreateLoan] registration not found - registrationId:{}", registrationId);
-//                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-//                        ResponseCode.TRANSACTION_FAIL.getCode());
-//                context.setResult(result);
-//                return !result.isOk();
-//            }
-//
-//            // Load LMT để lấy thông tin KH cần cho MS Loan API
-//            ComTransDtlLmt lmt = comTransDtlLmtRepository
-//                    .findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
-//                            custInfo.getHostCifId(),
-//                            SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
-//                            Constant.STATUS_SUCCESS);
-//            if (lmt == null) {
-//                log.error("[DoCreateLoan] LMT not found - hostCifId:{}", custInfo.getHostCifId());
-//                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-//                        ResponseCode.TRANSACTION_FAIL.getCode());
-//                context.setResult(result);
-//                return !result.isOk();
-//            }
-//
-//            // Format ngày theo API spec
-//            java.text.SimpleDateFormat sdfApi = new java.text.SimpleDateFormat("yyyyMMdd");
-//            java.text.SimpleDateFormat sdfDisplay = new java.text.SimpleDateFormat("dd/MM/yyyy");
-//            String valueDateStr = sdfApi.format(new java.util.Date()); // ngày hiệu lực = hôm nay
-//            String maturityDateStr = lmt.getEndDate() != null
-//                    ? sdfApi.format(lmt.getEndDate())
-//                    : sdfApi.format(new java.util.Date());
-//            String employmentDateStr = lmt.getEmploymentStartDate() != null
-//                    ? sdfDisplay.format(lmt.getEmploymentStartDate()) : "";
-//
-//            String loanCurrency = disbReq.getCurrency() != null
-//                    ? disbReq.getCurrency() : registration.getAccountCurrency();
-//
-//            MsLoanCreateRequest msRequest = MsLoanCreateRequest.builder()
-//                    // Thông tin KH
-//                    .customerCode(lmt.getHostCifId())
-//                    .customerName(lmt.getFullName())
-//                    .phoneNumber(lmt.getPhoneNumber())
-//                    .occupation(lmt.getOccupation())
-//                    .employmentDate(employmentDateStr)
-//                    .monthlySalary(lmt.getMonthlyIncome())
-//                    .salaryCurrency(lmt.getCurrency())
-//                    // Thông tin khoản vay
-//                    .loanAmount(registration.getLoanAmount())
-//                    .loanCurrency(loanCurrency)
-//                    .valueDate(valueDateStr)
-//                    .maturityDate(maturityDateStr)
-//                    .loanInterest(BigDecimal.valueOf(0))
-//                    .channel(SalaryAdvanceConstant.CHANNEL)
-//                    .product(SalaryAdvanceConstant.PRODUCT)
-//                    .subProduct(SalaryAdvanceConstant.SUB_PRODUCT)
-//                    .partnerCode(SalaryAdvanceConstant.PARTNER_CODE)
-//                    .build();
-//
-//            log.info("[DoCreateLoan] Calling MS Loan createLoan - requestId:{}, customerCode:{}, amount:{}",
-//                    request.getRequestId(), custInfo.getHostCifId(), registration.getLoanAmount());
-//
-//            ExecuteT24Output<MsLoanCreateOutput> output = apiMsLoan.createLoan(
-//                    msRequest, custInfo.getId(), request.getRequestId());
-//
-//            if (output == null) {
-//                log.error("[DoCreateLoan] MS Loan createLoan timeout - requestId:{}", request.getRequestId());
-//                result = new SimpleResult(ResponseCode.REQUEST_TIMEOUT.getDesc(), false,
-//                        ResponseCode.REQUEST_TIMEOUT.getCode());
-//                context.setResult(result);
-//                return !result.isOk();
-//            }
-//
-//            if (!Constant.CALL_MICROSERVICE_SUCCESS.equals(output.getStatus())) {
-//                String errDesc = output.getErrorInfo() != null ? output.getErrorInfo().getErrorDesc() : "createLoan failed";
-//                log.error("[DoCreateLoan] MS Loan error - requestId:{}, err:{}", request.getRequestId(), errDesc);
-//                result = new SimpleResult(errDesc, false,
-//                        output.getErrorInfo() != null ? output.getErrorInfo().getErrorCode()
-//                                : ResponseCode.TRANSACTION_FAIL.getCode());
-//                context.setResult(result);
-//                return !result.isOk();
-//            }
-//
-//            MsLoanCreateOutput createOut = output.getData();
-//            if (createOut == null || Utility.isNull(createOut.getLdId())) {
-//                log.error("[DoCreateLoan] ldId is null in MS Loan response - requestId:{}", request.getRequestId());
-//                result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-//                        ResponseCode.TRANSACTION_FAIL.getCode());
-//                context.setResult(result);
-//                return !result.isOk();
-//            }
-//
-//            //  context
-////            context.put("ld_id", createOut.getLdId());
-////            context.put("drawdown_account", createOut.getDrawdownAccount());
-////            context.put("loan_transaction_id", createOut.getTransactionId());
-////            context.put("loan_currency", createOut.getDrawdownAccountCurrency());
-////            context.put("loan_fee", createOut.getLoanFee());
-////            context.put("actual_loan_amount", createOut.getActualLoanAmount());
-//
-//            context.put("ms_loan_response",createOut);
-//
-//            //  Cập nhật Registration
-//            registration.setLdId(createOut.getLdId());
-//            registration.setLimitId(createOut.getLimitId());
-//            registration.setCreditContractId(createOut.getCreditContractId());
-//            registration.setStep("CREATE_LOAN");
-//            if (!Utility.isNull(createOut.getLoanFee())) {
-//                registration.setCbcFee(new BigDecimal(createOut.getLoanFee()));
-//            }
-//            registrationRepo.save(registration);
-//
-//            //  Tạo ComTransDtlLoanDisbursement
-//            String currency = createOut.getDrawdownAccountCurrency() != null
-//                    ? createOut.getDrawdownAccountCurrency() : loanCurrency;
-//            BigDecimal amount = registration.getLoanAmount() != null
-//                    ? registration.getLoanAmount() : BigDecimal.ZERO;
-//
-//            ComTransDtlLoanDisbursement dtl = ComTransDtlLoanDisbursement.builder()
-//                    .id(registrationId)
-//                    .custId(custInfo.getId())
-//                    .status(Constant.COM_STATUS_INT)
-//                    .debitAcctNo(createOut.getDrawdownAccount())      // working account (nguồn tiền)
-//                    .debitAcctName(createOut.getDrawdownAccountName())
-//                    .debitAcctCcy(currency)
-//                    .debitAmount(amount)
-//                    .crebitAcctNo(disbReq.getSelectedAccountNumber()) // TK đích của KH
-//                    .crebitAcctName(disbReq.getSelectedAccountName())
-//                    .crebitAcctCcy(currency)
-//                    .crebitAmount(amount)
-//                    .amount(amount)
-//                    .currency(currency)
-//                    .transferType(disbReq.getDisbursementType())      // MBC_ACCOUNT | EMONEY_WALLET
-//                    .productType("SALARY_ADVANCE")
-//                    .transactionDate(new java.util.Date())
-//                    .build();
-//            disbursementRepo.saveAndFlush(dtl);
-//            log.info("[DoCreateLoan] Saved DtlLoanDisbursement - id:{}", registrationId);
-//
-//            log.info("[DoCreateLoan] SUCCESS - ldId:{}, drawdownAccount:{}, loanFee:{}, actualAmount:{}, requestId:{}",
-//                    createOut.getLdId(), createOut.getDrawdownAccount(),
-//                    createOut.getLoanFee(), createOut.getActualLoanAmount(), request.getRequestId());
-//
-//        } catch (Exception e) {
-//            log.error("[DoCreateLoan] Exception - requestId:{}", request.getRequestId(), e);
-//            result = new SimpleResult(ResponseCode.TRANSACTION_FAIL.getDesc(), false,
-//                    ResponseCode.TRANSACTION_FAIL.getCode());
-//        }
-//        context.setResult(result);
-//        return !result.isOk();
-//    }
-//}
+package com.mbc.mobileapp.command.digital_loan;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mbc.common.api.ApiCustomer;
+import com.mbc.common.bean.ProcessContext;
+import com.mbc.common.bean.ResponseCode;
+import com.mbc.common.entity.ComTransDtlLoanDisbursement;
+import com.mbc.common.entity.ComTransDtlLoanRegistration;
+import com.mbc.common.entity.ComTransDtlLmt;
+import com.mbc.common.il.base.ExecuteT24Output;
+import com.mbc.common.object.CustInfo;
+import com.mbc.common.repository.ComTransDtlLoanDisbursementRepo;
+import com.mbc.common.repository.ComTransDtlLoanRegistrationRepo;
+import com.mbc.common.repository.ComTransDtlLmtRepository;
+import com.mbc.common.services.il.loanorigination.DoGenT24DayNowOutput;
+import com.mbc.common.util.Constant;
+import com.mbc.common.util.Utility;
+import com.mbc.gateway.validator.result.SimpleResult;
+import com.mbc.common.validator.base.Validator;
+import com.mbc.mobileapp.api.ApiMsLoan;
+import com.mbc.mobileapp.api.model.digitalloan.input.MsLoanCreateRequest;
+import com.mbc.mobileapp.api.model.digitalloan.input.MsLoanCreateRequest.LoanInfo;
+import com.mbc.mobileapp.api.model.digitalloan.output.MsLoanCreateOutput;
+import com.mbc.mobileapp.constant.SalaryAdvanceConstant;
+import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
+import com.mbc.mobileapp.rest.digitalloan.disbursement.DisbursementRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.chain.Command;
+import org.apache.commons.chain.Context;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class DoCreateLoan implements Command {
+
+    private final ApiMsLoan apiMsLoan;
+    private final ApiCustomer apiCustomer;
+    private final ComTransDtlLoanRegistrationRepo registrationRepo;
+    private final ComTransDtlLoanDisbursementRepo disbursementRepo;
+    private final ComTransDtlLmtRepository lmtRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public boolean execute(Context ctx) {
+
+        ProcessContext context = (ProcessContext) ctx;
+        Validator.Result result = Validator.Result.OK;
+
+        CommonServiceRequest request = (CommonServiceRequest) context.getRequest();
+        CustInfo custInfo = context.getCustomer();
+
+        try {
+
+            
+            // VALIDATE INPUT
+            
+            DisbursementRequest disbReq = request.getDisbursementRequest();
+            if (disbReq == null) {
+                log.error("[DoCreateLoan] disbursementRequest null");
+
+                context.setResult(new SimpleResult(
+                        ResponseCode.TRANSACTION_FAIL.getDesc(),
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            String registrationId = disbReq.getTransId();
+            if (Utility.isNull(registrationId)) {
+                log.error("[DoCreateLoan] registrationId missing");
+
+                context.setResult(new SimpleResult(
+                        ResponseCode.TRANSACTION_FAIL.getDesc(),
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            
+            // LOAD DATA
+            
+            ComTransDtlLoanRegistration registration =
+                    registrationRepo.findByIdAndStatus(registrationId, Constant.COM_STATUS_INT);
+
+            if (registration == null) {
+                log.error("[DoCreateLoan] registration not found {}", registrationId);
+
+                context.setResult(new SimpleResult(
+                        ResponseCode.TRANSACTION_FAIL.getDesc(),
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            ComTransDtlLmt lmt =
+                    lmtRepository.findTopByHostCifIdAndLoanTypeAndStatusOrderByCreatedAtDesc(
+                            custInfo.getHostCifId(),
+                            SalaryAdvanceConstant.LOAN_TYPE_SALARY_ADVANCE,
+                            Constant.STATUS_SUCCESS
+                    );
+
+            if (lmt == null) {
+                log.error("[DoCreateLoan] LMT not found {}", custInfo.getHostCifId());
+
+                context.setResult(new SimpleResult(
+                        ResponseCode.TRANSACTION_FAIL.getDesc(),
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            
+            // GET T24 DATE
+            
+            ExecuteT24Output<DoGenT24DayNowOutput> t24Res =
+                    apiCustomer.genT24DayNow(custInfo.getId(), request.getRequestId());
+
+            if (t24Res == null
+                    || !Constant.CALL_MICROSERVICE_SUCCESS.equals(t24Res.getStatus())
+                    || t24Res.getData() == null
+                    || Utility.isNull(t24Res.getData().getToday())) {
+
+                log.error("[DoCreateLoan] genT24DayNow failed");
+
+                context.setResult(new SimpleResult(
+                        ResponseCode.REQUEST_TIMEOUT.getDesc(),
+                        false,
+                        ResponseCode.REQUEST_TIMEOUT.getCode()
+                ));
+                return true;
+            }
+
+            String t24Day = t24Res.getData().getToday();
+
+            
+            // COMPUTE DATA
+            
+            SimpleDateFormat sdfApi = new SimpleDateFormat("yyyyMMdd");
+            SimpleDateFormat sdfDisplay = new SimpleDateFormat("dd/MM/yyyy");
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+            String valueDateStr = t24Day;
+            String maturityDateStr = lmt.getEndDate() != null
+                    ? sdfApi.format(lmt.getEndDate())
+                    : t24Day;
+
+            String employmentDateStr = lmt.getEmploymentStartDate() != null
+                    ? sdfDisplay.format(lmt.getEmploymentStartDate())
+                    : null;
+
+            String loanCurrency = disbReq.getCurrency() != null
+                    ? disbReq.getCurrency()
+                    : registration.getAccountCurrency();
+
+            Map<String, Object> salaryMap =
+                    objectMapper.readValue(lmt.getSalaryInfoDetail(), Map.class);
+
+            BigDecimal salaryT1USD =
+                    new BigDecimal(String.valueOf(salaryMap.get("salaryAmountT1USD")));
+
+            
+            // BUILD LOAN INFO (NESTED)
+            
+            LoanInfo loanInfo = new LoanInfo();
+            loanInfo.setLoanAmount(registration.getLoanAmount());
+            loanInfo.setLoanCurrency(loanCurrency);
+            loanInfo.setLoanInterest(BigDecimal.ZERO);
+            loanInfo.setLoanInterestSpread(null);
+            loanInfo.setValueDate(valueDateStr);
+            loanInfo.setMaturityDate(maturityDateStr);
+            loanInfo.setChannel(SalaryAdvanceConstant.CHANNEL);
+            loanInfo.setProduct(SalaryAdvanceConstant.PRODUCT);
+            loanInfo.setSubProduct(SalaryAdvanceConstant.SUB_PRODUCT);
+            loanInfo.setPartnerCode(SalaryAdvanceConstant.PARTNER_CODE);
+
+            MsLoanCreateRequest msRequest = MsLoanCreateRequest.builder()
+                    .customerCode(lmt.getHostCifId())
+                    .customerName(lmt.getFullName())
+                    .phoneNumber(lmt.getPhoneNumber())
+                    .occupation(lmt.getOccupation())
+                    .employmentDate(employmentDateStr)
+                    .monthlySalary(salaryT1USD)
+                    .selfEmployment("N")
+                    .salaryCurrency(lmt.getCurrency())
+                    .loanInfo(loanInfo)
+                    .build();
+
+            
+            // CALL MS LOAN
+            
+            ExecuteT24Output<MsLoanCreateOutput> output =
+                    apiMsLoan.createLoan(msRequest, custInfo.getId(), request.getRequestId());
+
+            if (output == null) {
+                context.setResult(new SimpleResult(
+                        ResponseCode.REQUEST_TIMEOUT.getDesc(),
+                        false,
+                        ResponseCode.REQUEST_TIMEOUT.getCode()
+                ));
+                return true;
+            }
+
+            if (!Constant.CALL_MICROSERVICE_SUCCESS.equals(output.getStatus())) {
+
+                String msg = output.getErrorInfo() != null
+                        ? output.getErrorInfo().getErrorDesc()
+                        : "createLoan failed";
+
+                context.setResult(new SimpleResult(
+                        msg,
+                        false,
+                        output.getErrorInfo() != null
+                                ? output.getErrorInfo().getErrorCode()
+                                : ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            MsLoanCreateOutput out = output.getData();
+
+            if (out == null || Utility.isNull(out.getLdId())) {
+                context.setResult(new SimpleResult(
+                        ResponseCode.TRANSACTION_FAIL.getDesc(),
+                        false,
+                        ResponseCode.TRANSACTION_FAIL.getCode()
+                ));
+                return true;
+            }
+
+            
+            // CONTEXT OUTPUT
+            
+            context.put("ms_loan_response", out);
+
+            
+            // UPDATE REGISTRATION
+            
+            registration.setLdId(out.getLdId());
+            registration.setLimitId(out.getLimitId());
+            registration.setCreditContractId(out.getCreditContractId());
+            registration.setStep("CREATE_LOAN");
+
+            if (!Utility.isNull(out.getLoanFee())) {
+                registration.setCbcFee(new BigDecimal(out.getLoanFee()));
+            }
+
+            registrationRepo.saveAndFlush(registration);
+
+            
+            // SAVE DISBURSEMENT
+            
+            String currency = out.getDrawdownAccountCurrency() != null
+                    ? out.getDrawdownAccountCurrency()
+                    : loanCurrency;
+
+            BigDecimal amount = registration.getLoanAmount() != null
+                    ? registration.getLoanAmount()
+                    : BigDecimal.ZERO;
+
+            ComTransDtlLoanDisbursement dtl =
+                    ComTransDtlLoanDisbursement.builder()
+                            .id(registrationId)
+                            .custId(custInfo.getId())
+                            .status(Constant.COM_STATUS_INT)
+                            .debitAcctNo(out.getDrawdownAccount())
+                            .debitAcctName(out.getDrawdownAccountName())
+                            .debitAcctCcy(currency)
+                            .debitAmount(amount)
+                            .crebitAcctNo(disbReq.getSelectedAccountNumber())
+                            .crebitAcctName(disbReq.getSelectedAccountName())
+                            .crebitAcctCcy(currency)
+                            .crebitAmount(amount)
+                            .amount(amount)
+                            .currency(currency)
+                            .transferType(disbReq.getDisbursementType())
+                            .productType(SalaryAdvanceConstant.PRODUCT)
+                            .transactionDate(new Date())
+                            .build();
+
+            disbursementRepo.saveAndFlush(dtl);
+
+            log.info("[DoCreateLoan] SUCCESS ldId={}", out.getLdId());
+
+        } catch (Exception e) {
+            log.error("[DoCreateLoan] exception", e);
+
+            context.setResult(new SimpleResult(
+                    ResponseCode.TRANSACTION_FAIL.getDesc(),
+                    false,
+                    ResponseCode.TRANSACTION_FAIL.getCode()
+            ));
+            return true;
+        }
+
+        context.setResult(result);
+        return false;
+    }
+}

@@ -12,7 +12,6 @@ import com.mbc.gateway.validator.result.SimpleResult;
 import com.mbc.mobileapp.rest.bean.CommonServiceRequest;
 import com.mbc.mobileapp.rest.digitalloan.disbursement.*;
 import com.mbc.mobileapp.rest.digitalloan.getloan.*;
-
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentRequest;
 import com.mbc.mobileapp.rest.digitalloan.repayment.LoanRepaymentResponse;
 import com.mbc.mobileapp.service.base.DigitalLoanService;
@@ -30,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.Validator;
 import java.security.Principal;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -98,8 +98,6 @@ public class DigitalLoanController extends BaseController {
         log.info("[DIGITAL-LOAN GET Loan] out data: {}", JSON.stringify(resp));
         return resp;
     }
-
-
 
     /**
      * Danh sách khoản vay quá hạn
@@ -349,9 +347,14 @@ public class DigitalLoanController extends BaseController {
                 request = (CommonServiceRequest) setBase(request, param);
                 Principal principal = requestClient.getUserPrincipal();
                 request.setPartnerId(principal.getName());
-                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_LOAN_OD_DISBURSEMENT);
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
                 request.setTransId(param.getTransId());
-                resp = digitalLoanService.disbursement(request, cust);
+                request.setDisbursementRequest(param);
+                // Token OTP cho ValidateOTP command
+                if (param.getTokenOTP() != null) {
+                    request.setTokenOTP(param.getTokenOTP());
+                }
+                resp = digitalLoanService.disbursement(request, cust,param.getTokenOTP());
 
             }
         }
@@ -405,6 +408,67 @@ public class DigitalLoanController extends BaseController {
         }
         resp.setRefNo(param.getRefNo());
         log.info("[LOAN DISBURSEMENT] out data: {}", JSON.stringify(resp));
+        return resp;
+    }
+
+
+    @ApiOperation("Api Gen File ")
+    @PostMapping("/gen-file")
+    public DisbursementResponse<Object> genFile(@RequestBody GenFileRequest param,
+                                                HttpServletRequest requestClient) {
+        DisbursementResponse<Object> resp = new DisbursementResponse<>();
+        Result result;
+
+//
+//        if (dynKeyEnabled) {
+//            DynamicKeyResponse<GenFileRequest> dynResponse = dynDecryptData1(dynRequest, GenFileRequest.class);
+//            param = dynResponse.getData();
+//            if (param == null) {
+//                result = new SimpleResult(dynResponse.getDynResponse().getM_statusCode(), false,
+//                        ResponseCode.DYNKEY_DECRYPT_ERROR.getCode());
+//                resp.setResult(result);
+//                return resp;
+//            }
+//        } else {
+//            param = mapDataRequestBody(dynRequest.getDataEncrypt(), GenFileRequest.class);
+//            if (param == null) {
+//                result = new SimpleResult(ResponseCode.INVALID_INPUT.getDesc(), false,
+//                        ResponseCode.INVALID_INPUT.getCode());
+//                resp.setResult(result);
+//                return resp;
+//            }
+//        }
+//        */
+
+        log.info("[LOAN GENFILE] input data: {}", JSON.stringify(param));
+        result = validate(param);
+        if (!result.isOk()) {
+            resp.setResult(result);
+        } else {
+            CustInfo cust = getCustFromSession(param.getSessionId());
+            if (cust != null) {
+                CommonServiceRequest request = new CommonServiceRequest();
+                Principal principal = requestClient.getUserPrincipal();
+
+                // Tạo refNo theo pattern: userId-yyyyMMddHHmmssSSS
+                LocalDateTime now = LocalDateTime.now();
+                String refNo = String.format("%s-%d%02d%02d%02d%02d%02d%d",
+                        cust.getUserId(),
+                        now.getYear(), now.getMonthValue(), now.getDayOfMonth(),
+                        now.getHour(), now.getMinute(), now.getSecond(),
+                        now.getNano() / 1_000_000);
+                param.setRefNo(refNo);
+
+                request = (CommonServiceRequest) setBase(request, param);
+                request.setPartnerId(principal.getName());
+                request.setSrvcCdCheck(Constant.SrvcCd.SRVC_SALARY_ADVANCE);
+                request.setTransId(param.getTransId());
+                request.setGenFileRequest(param);
+                resp = digitalLoanService.genFile(request, cust);
+                resp.setRefNo(param.getRefNo());
+            }
+        }
+        log.info("[LOAN GENFILE] out data: {}", JSON.stringify(resp));
         return resp;
     }
 

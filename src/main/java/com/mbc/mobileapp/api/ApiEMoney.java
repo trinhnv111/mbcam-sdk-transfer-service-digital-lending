@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mbc.common.api.CallApiGee;
 import com.mbc.common.bean.ResponseCode;
 import com.mbc.common.util.AppLog;
+import com.mbc.mobileapp.api.model.digitalloan.input.EmLoanDisbursementRequest;
 import com.mbc.mobileapp.api.model.salary_advance.input.EmCustInfoInput;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoData;
 import com.mbc.mobileapp.api.model.salary_advance.output.EmCustInfoResponse;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmLoanDisbursementData;
+import com.mbc.mobileapp.api.model.salary_advance.output.EmLoanDisbursementResponse;
 import com.mbc.mobileapp.api.model.salary_advance.output.ExcuteEmoney;
 import com.mbc.mobileapp.utils.EmoneyApiUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +123,63 @@ public class ApiEMoney extends CallApiGee {
 
         } catch (Exception e) {
             AppLog.error("[API-EMONEY] customer/info Exception - requestId:" + requestId + " - " + e.getMessage(), e);
+            return new ExcuteEmoney<>(500, "EXCEPTION", e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Gọi eMoney API ghi nợ sau khi Core Banking tạo LD thành công.
+     * POST /{merchantCode}/digital-lending/loan/disbursement
+     *
+     * @param request   Thông tin khoản nợ (ldId, amount, dueDate, transHash...)
+     * @param custId    ID nội bộ (header)
+     * @param requestId requestId trace
+     */
+    public ExcuteEmoney<EmLoanDisbursementData> pushLoanDisbursement(
+            EmLoanDisbursementRequest request, String custId, String requestId) {
+        try {
+            String merchantCode = "MBCLENDING";
+            String basePath = getUrl("apigee.emoney.digital-lending.loan-disbursement.url");
+            String fullUrl = getUrl("apigee.host.url") + "/" + merchantCode + basePath;
+            AppLog.info("[API-EMONEY] pushLoanDisbursement via Apigee - requestId:" + requestId
+                    + ", url:" + fullUrl + ", MBCLoanId:" + request.getMBCLoanId());
+
+            HttpHeaders headers = buildHeader(custId, requestId, requestId);
+            headers.add("PARTNER", "EMONEY");
+            headers.add("emoney-token", emoneyToken);
+
+            EmLoanDisbursementResponse response = postForApigee(
+                    UriComponentsBuilder.fromHttpUrl(fullUrl).build().toUri(),
+                    headers,
+                    request,
+                    EmLoanDisbursementResponse.class
+            );
+
+            if (response == null) {
+                return new ExcuteEmoney<>(504, "TIMEOUT", "Apigee response is null", null);
+            }
+
+            // status 0 = success
+            if (!Integer.valueOf(0).equals(response.getStatus())) {
+                AppLog.error("[API-EMONEY] pushLoanDisbursement failed - status:" + response.getStatus()
+                        + ", code:" + response.getCode(), null);
+                return new ExcuteEmoney<>(response.getStatus(), response.getCode(), response.getMessage(), null);
+            }
+
+            EmLoanDisbursementData data = null;
+            if (response.getData() != null) {
+                data = new EmLoanDisbursementData();
+                data.setEmLoanId(response.getData().getEmLoanId());
+                data.setMBCLoanId(response.getData().getMBCLoanId());
+            }
+
+            AppLog.info("[API-EMONEY] pushLoanDisbursement SUCCESS - emLoanId:"
+                    + (data != null ? data.getEmLoanId() : "null"));
+            return new ExcuteEmoney<>(0, "MSG_SUCCESS", "Success", data);
+
+        } catch (Exception e) {
+            AppLog.error("[API-EMONEY] pushLoanDisbursement Exception - requestId:" + requestId
+                    + " - " + e.getMessage(), e);
             return new ExcuteEmoney<>(500, "EXCEPTION", e.getMessage(), null);
         }
     }
